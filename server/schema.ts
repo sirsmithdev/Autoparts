@@ -49,6 +49,7 @@ export const posTransactionTypeValues = ["sale", "refund", "void"] as const;
 export const posTransactionStatusValues = ["completed", "voided", "refunded"] as const;
 export const posPaymentMethodValues = ["cash", "card", "saved_card", "split"] as const;
 export const posSessionStatusValues = ["open", "closed"] as const;
+export const paymentStatusValues = ["pending", "paid", "refunded", "voided"] as const;
 export const syncDirectionValues = ["inbound", "outbound"] as const;
 export const syncStatusValues = ["success", "failed", "queued"] as const;
 export const syncQueueStatusValues = ["pending", "processing", "completed", "failed"] as const;
@@ -71,10 +72,7 @@ export const customers = mysqlTable("customers", {
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => [
-  index("idx_customers_email").on(table.email),
-  index("idx_customers_google_id").on(table.googleId),
-]);
+});
 
 export const products = mysqlTable("products", {
   id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
@@ -99,10 +97,7 @@ export const products = mysqlTable("products", {
   lastSyncedAt: timestamp("last_synced_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
-  index("idx_products_part_number").on(table.partNumber),
-  index("idx_products_barcode").on(table.barcode),
   index("idx_products_category").on(table.category),
-  index("idx_products_garage_part_id").on(table.garagePartId),
   index("idx_products_active_featured").on(table.isActive, table.isFeatured),
 ]);
 
@@ -219,7 +214,7 @@ export const onlineStoreOrders = mysqlTable("online_store_orders", {
   taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).notNull().default("0.00"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull().default("0.00"),
   paymentTransactionId: varchar("payment_transaction_id", { length: 36 }),
-  paymentStatus: varchar("payment_status", { length: 20 }).default("pending"),
+  paymentStatus: mysqlEnum("payment_status", paymentStatusValues).default("pending"),
   pickListId: varchar("pick_list_id", { length: 36 }),
   trackingNumber: text("tracking_number"),
   customerName: text("customer_name"),
@@ -229,21 +224,20 @@ export const onlineStoreOrders = mysqlTable("online_store_orders", {
   placedAt: timestamp("placed_at"),
   confirmedAt: timestamp("confirmed_at"),
   packedAt: timestamp("packed_at"),
-  packedBy: varchar("packed_by", { length: 36 }).references(() => customers.id, { onDelete: "set null" }),
+  packedBy: varchar("packed_by", { length: 36 }),
   shippedAt: timestamp("shipped_at"),
   deliveredAt: timestamp("delivered_at"),
   pickupReadyAt: timestamp("pickup_ready_at"),
   pickedUpAt: timestamp("picked_up_at"),
   pickedUpBy: text("picked_up_by"),
   cancelledAt: timestamp("cancelled_at"),
-  cancelledBy: varchar("cancelled_by", { length: 36 }).references(() => customers.id, { onDelete: "set null" }),
+  cancelledBy: varchar("cancelled_by", { length: 36 }),
   cancellationReason: text("cancellation_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_online_orders_customer").on(table.customerId),
   index("idx_online_orders_status").on(table.status),
-  index("idx_online_orders_number").on(table.orderNumber),
   index("idx_online_orders_created").on(table.createdAt),
 ]);
 
@@ -276,14 +270,14 @@ export const onlineStoreReturns = mysqlTable("online_store_returns", {
   returnShippingPaidBy: varchar("return_shipping_paid_by", { length: 20 }),
   requestedAt: timestamp("requested_at").defaultNow().notNull(),
   approvedAt: timestamp("approved_at"),
-  approvedBy: varchar("approved_by", { length: 36 }).references(() => customers.id, { onDelete: "set null" }),
+  approvedBy: varchar("approved_by", { length: 36 }),
   rejectedAt: timestamp("rejected_at"),
-  rejectedBy: varchar("rejected_by", { length: 36 }).references(() => customers.id, { onDelete: "set null" }),
+  rejectedBy: varchar("rejected_by", { length: 36 }),
   rejectionReason: text("rejection_reason"),
   shippedBackAt: timestamp("shipped_back_at"),
   shippedBackTrackingNumber: text("shipped_back_tracking_number"),
   receivedAt: timestamp("received_at"),
-  receivedBy: varchar("received_by", { length: 36 }).references(() => customers.id, { onDelete: "set null" }),
+  receivedBy: varchar("received_by", { length: 36 }),
   closedAt: timestamp("closed_at"),
   staffNotes: text("staff_notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -335,7 +329,6 @@ export const refreshTokens = mysqlTable("refresh_tokens", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_refresh_tokens_customer").on(table.customerId),
-  index("idx_refresh_tokens_hash").on(table.tokenHash),
 ]);
 
 // ==================== Warehouse Tables (6) ====================
@@ -359,7 +352,6 @@ export const warehouseBins = mysqlTable("warehouse_bins", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_warehouse_bins_location").on(table.locationId),
-  index("idx_warehouse_bins_code").on(table.binCode),
 ]);
 
 export const productBinAssignments = mysqlTable("product_bin_assignments", {
@@ -390,6 +382,7 @@ export const stockMovements = mysqlTable("stock_movements", {
   index("idx_stock_movements_product").on(table.productId),
   index("idx_stock_movements_type").on(table.movementType),
   index("idx_stock_movements_created").on(table.createdAt),
+  index("idx_stock_movements_reference").on(table.referenceType, table.referenceId),
 ]);
 
 export const stockReceipts = mysqlTable("stock_receipts", {
@@ -455,7 +448,7 @@ export const pickListItems = mysqlTable("pick_list_items", {
 
 export const posSessions = mysqlTable("pos_sessions", {
   id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
-  sessionNumber: varchar("session_number", { length: 50 }).notNull(),
+  sessionNumber: varchar("session_number", { length: 50 }).notNull().unique(),
   openedBy: varchar("opened_by", { length: 36 }).notNull(),
   closedBy: varchar("closed_by", { length: 36 }),
   openedAt: timestamp("opened_at").defaultNow().notNull(),
@@ -491,7 +484,6 @@ export const posTransactions = mysqlTable("pos_transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_pos_transactions_session").on(table.sessionId),
-  index("idx_pos_transactions_number").on(table.transactionNumber),
   index("idx_pos_transactions_created").on(table.createdAt),
 ]);
 
@@ -598,6 +590,7 @@ export type InsertProductCompatibility = typeof productCompatibility.$inferInser
 export type ProductImage = typeof productImages.$inferSelect;
 export type InsertProductImage = typeof productImages.$inferInsert;
 export type StoreSettings = typeof storeSettings.$inferSelect;
+export type InsertStoreSettings = typeof storeSettings.$inferInsert;
 
 // E-Commerce
 export type ShoppingCart = typeof shoppingCarts.$inferSelect;
@@ -652,6 +645,14 @@ export type PosTransactionItem = typeof posTransactionItems.$inferSelect;
 export type InsertPosTransactionItem = typeof posTransactionItems.$inferInsert;
 export type PosHeldCart = typeof posHeldCarts.$inferSelect;
 export type InsertPosHeldCart = typeof posHeldCarts.$inferInsert;
+
+// Sequences
+export type OnlineOrderNumberSequence = typeof onlineOrderNumberSequence.$inferSelect;
+export type OnlineReturnNumberSequence = typeof onlineReturnNumberSequence.$inferSelect;
+export type PickListNumberSequence = typeof pickListNumberSequence.$inferSelect;
+export type PosTransactionNumberSequence = typeof posTransactionNumberSequence.$inferSelect;
+export type PosSessionNumberSequence = typeof posSessionNumberSequence.$inferSelect;
+export type StockReceiptNumberSequence = typeof stockReceiptNumberSequence.$inferSelect;
 
 // Operational
 export type SyncLog = typeof syncLog.$inferSelect;
