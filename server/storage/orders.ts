@@ -28,6 +28,7 @@ import {
   enqueueStockDecrement,
   enqueueStockRestore,
 } from "../sync/stockSync.js";
+import { createPickListForOrder } from "./pickLists.js";
 import { randomUUID } from "crypto";
 
 // ---------------------------------------------------------------------------
@@ -538,9 +539,16 @@ async function transitionOrder(
     .where(eq(onlineStoreOrders.id, orderId));
 }
 
-/** placed -> confirmed */
+/** placed -> confirmed, then auto-create pick list */
 export async function confirmOrder(orderId: string): Promise<void> {
   await transitionOrder(orderId, "confirmed", { confirmedAt: new Date() });
+
+  // Auto-create pick list (best-effort — order is still confirmed if this fails)
+  try {
+    await createPickListForOrder(orderId, "system");
+  } catch (error) {
+    console.error("Failed to auto-create pick list for order", orderId, error);
+  }
 }
 
 /** confirmed -> picking */
