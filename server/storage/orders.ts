@@ -30,6 +30,7 @@ import {
 } from "../sync/stockSync.js";
 import { createPickListForOrder } from "./pickLists.js";
 import { randomUUID } from "crypto";
+import * as email from "../email.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -297,6 +298,23 @@ export async function confirmOrderPayment(
         eq(onlineStoreOrders.status, "pending_payment"),
       ),
     );
+
+  // Send order confirmation email + staff notification (best-effort, never block)
+  const order = await getOrder(orderId);
+  if (order?.customerEmail) {
+    email.sendOrderPlacedEmail({
+      customerEmail: order.customerEmail,
+      customerName: order.customerName || "Customer",
+      orderNumber: order.orderNumber,
+      items: order.items.map(i => ({ productName: i.productName, quantity: i.quantity, unitPrice: i.unitPrice, lineTotal: i.lineTotal })),
+      subtotal: order.subtotal,
+      taxAmount: order.taxAmount,
+      deliveryFee: order.deliveryFee,
+      total: order.total,
+      deliveryMethod: order.deliveryMethod,
+    }).catch(() => {});
+    email.sendNewOrderStaffEmail(order.orderNumber, order.total, order.customerName || "Customer").catch(() => {});
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -576,6 +594,11 @@ export async function markOrderShipped(
     trackingNumber,
     shippedAt: new Date(),
   });
+
+  const order = await getOrder(orderId);
+  if (order?.customerEmail) {
+    email.sendOrderShippedEmail(order.customerEmail, order.customerName || "Customer", order.orderNumber, trackingNumber).catch(() => {});
+  }
 }
 
 /** shipped -> out_for_delivery */
@@ -583,11 +606,21 @@ export async function markOrderOutForDelivery(
   orderId: string,
 ): Promise<void> {
   await transitionOrder(orderId, "out_for_delivery");
+
+  const order = await getOrder(orderId);
+  if (order?.customerEmail) {
+    email.sendOutForDeliveryEmail(order.customerEmail, order.customerName || "Customer", order.orderNumber).catch(() => {});
+  }
 }
 
 /** shipped/out_for_delivery -> delivered */
 export async function markOrderDelivered(orderId: string): Promise<void> {
   await transitionOrder(orderId, "delivered", { deliveredAt: new Date() });
+
+  const order = await getOrder(orderId);
+  if (order?.customerEmail) {
+    email.sendDeliveredEmail(order.customerEmail, order.customerName || "Customer", order.orderNumber).catch(() => {});
+  }
 }
 
 /** Set pickupReadyAt timestamp (does not change status). */
@@ -598,6 +631,11 @@ export async function markOrderReadyForPickup(
     .update(onlineStoreOrders)
     .set({ pickupReadyAt: new Date(), updatedAt: new Date() })
     .where(eq(onlineStoreOrders.id, orderId));
+
+  const order = await getOrder(orderId);
+  if (order?.customerEmail) {
+    email.sendReadyForPickupEmail(order.customerEmail, order.customerName || "Customer", order.orderNumber).catch(() => {});
+  }
 }
 
 /** packed -> delivered (pickup flow) */
