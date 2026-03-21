@@ -49,6 +49,18 @@ router.post("/api/store/admin/orders/:id/confirm", authenticateToken, requireAdm
   }
 });
 
+// Start picking — confirmed → picking
+router.post("/api/store/admin/orders/:id/start-picking", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await orders.markOrderPicking(String(req.params.id));
+    const order = await orders.getOrder(String(req.params.id));
+    res.json(order);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to start picking";
+    res.status(400).json({ message });
+  }
+});
+
 router.post("/api/store/admin/orders/:id/pack", authenticateToken, requireAdmin, async (req, res) => {
   try {
     await orders.markOrderPacked(String(req.params.id), req.customer!.customerId);

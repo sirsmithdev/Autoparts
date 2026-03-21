@@ -9,7 +9,6 @@ import cartRoutes from "./cart.routes.js";
 import checkoutRoutes from "./checkout.routes.js";
 import ordersRoutes from "./orders.routes.js";
 import adminRoutes from "./admin.routes.js";
-// import returnsRoutes from "./returns.routes.js"; // TODO: Plan 4 — needs storage rebuild
 
 export function registerRoutes(app: Express): void {
   app.use(authRoutes);
@@ -19,5 +18,4 @@ export function registerRoutes(app: Express): void {
   app.use(checkoutRoutes);
   app.use(ordersRoutes);
   app.use(adminRoutes);
-  // app.use(returnsRoutes); // TODO: Plan 4
 }
