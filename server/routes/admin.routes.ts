@@ -5,6 +5,7 @@
 import { Router } from "express";
 import { authenticateToken, requireAdmin } from "../middleware.js";
 import * as orders from "../storage/orders.js";
+import * as returns from "../storage/returns.js";
 import * as settings from "../storage/settings.js";
 import * as syncStorage from "../storage/sync.js";
 
@@ -153,36 +154,103 @@ router.patch("/api/store/admin/orders/:id/notes", authenticateToken, requireAdmi
   }
 });
 
-// ==================== Returns Management (TODO: Plan 4) ====================
+// ==================== Returns Management ====================
 
-router.get("/api/store/admin/returns", authenticateToken, requireAdmin, async (_req, res) => {
-  // TODO: Plan 4 — returns storage will be rebuilt
-  res.status(501).json({ message: "Returns management not yet implemented — see Plan 4" });
+router.get("/api/store/admin/returns", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { status, search, page, limit } = req.query;
+    const result = await returns.getAllReturns({
+      status: status as string,
+      search: search as string,
+      page: page ? parseInt(page as string) : 1,
+      limit: limit ? parseInt(limit as string) : 20,
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to get returns" });
+  }
 });
 
-router.get("/api/store/admin/returns/:id", authenticateToken, requireAdmin, async (_req, res) => {
-  // TODO: Plan 4 — returns storage will be rebuilt
-  res.status(501).json({ message: "Returns management not yet implemented — see Plan 4" });
+router.get("/api/store/admin/returns/:id", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const ret = await returns.getReturn(String(req.params.id));
+    if (!ret) return res.status(404).json({ message: "Return not found" });
+    res.json(ret);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to get return" });
+  }
 });
 
-router.post("/api/store/admin/returns/:id/approve", authenticateToken, requireAdmin, async (_req, res) => {
-  // TODO: Plan 4 — returns storage will be rebuilt
-  res.status(501).json({ message: "Returns management not yet implemented — see Plan 4" });
+router.post("/api/store/admin/returns/:id/approve", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await returns.approveReturn(String(req.params.id), req.customer!.customerId);
+    const ret = await returns.getReturn(String(req.params.id));
+    res.json(ret);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to approve return";
+    res.status(400).json({ message });
+  }
 });
 
-router.post("/api/store/admin/returns/:id/reject", authenticateToken, requireAdmin, async (_req, res) => {
-  // TODO: Plan 4 — returns storage will be rebuilt
-  res.status(501).json({ message: "Returns management not yet implemented — see Plan 4" });
+router.post("/api/store/admin/returns/:id/reject", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (!reason) return res.status(400).json({ message: "reason is required" });
+    await returns.rejectReturn(String(req.params.id), req.customer!.customerId, reason);
+    const ret = await returns.getReturn(String(req.params.id));
+    res.json(ret);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to reject return";
+    res.status(400).json({ message });
+  }
 });
 
-router.post("/api/store/admin/returns/:id/receive", authenticateToken, requireAdmin, async (_req, res) => {
-  // TODO: Plan 4 — returns storage will be rebuilt
-  res.status(501).json({ message: "Returns management not yet implemented — see Plan 4" });
+router.post("/api/store/admin/returns/:id/receive", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { itemConditions } = req.body;
+    if (!Array.isArray(itemConditions)) {
+      return res.status(400).json({ message: "itemConditions array is required" });
+    }
+    await returns.receiveReturn(String(req.params.id), req.customer!.customerId, itemConditions);
+    const ret = await returns.getReturn(String(req.params.id));
+    res.json(ret);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to receive return";
+    res.status(400).json({ message });
+  }
 });
 
-router.post("/api/store/admin/returns/:id/refund", authenticateToken, requireAdmin, async (_req, res) => {
-  // TODO: Plan 4 — returns storage will be rebuilt
-  res.status(501).json({ message: "Returns management not yet implemented — see Plan 4" });
+router.post("/api/store/admin/returns/:id/refund", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await returns.refundReturn(String(req.params.id));
+    const ret = await returns.getReturn(String(req.params.id));
+    res.json(ret);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to refund return";
+    res.status(400).json({ message });
+  }
+});
+
+router.post("/api/store/admin/returns/:id/exchange", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await returns.exchangeReturn(String(req.params.id), req.body.staffNotes);
+    const ret = await returns.getReturn(String(req.params.id));
+    res.json(ret);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to exchange return";
+    res.status(400).json({ message });
+  }
+});
+
+router.post("/api/store/admin/returns/:id/store-credit", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await returns.storeCreditReturn(String(req.params.id), req.body.staffNotes);
+    const ret = await returns.getReturn(String(req.params.id));
+    res.json(ret);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to issue store credit";
+    res.status(400).json({ message });
+  }
 });
 
 // ==================== Delivery Zones ====================
