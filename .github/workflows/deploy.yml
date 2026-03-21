@@ -58,18 +58,18 @@ jobs:
           echo "runner_ip=${RUNNER_IP}" >> $GITHUB_OUTPUT
           echo "Adding runner IP ${RUNNER_IP} to database firewall..."
 
-          # Get existing rules as JSON and build new rules array with runner IP added
-          RULES=$(doctl databases firewalls list ${{ env.DB_CLUSTER_ID }} --output json | \
+          # Build --rule flags from existing rules + runner IP
+          RULE_FLAGS=$(doctl databases firewalls list ${{ env.DB_CLUSTER_ID }} --output json | \
             python3 -c "
           import sys, json
           rules = json.load(sys.stdin)
-          existing = [{'uuid': r['uuid'], 'type': r['type'], 'value': r['value']} for r in rules]
-          existing.append({'type': 'ip_addr', 'value': '${RUNNER_IP}'})
-          print(json.dumps(existing))
+          flags = ' '.join(['--rule ' + r['type'] + ':' + r['value'] for r in rules])
+          flags += ' --rule ip_addr:${RUNNER_IP}'
+          print(flags)
           ")
 
           echo "Updating firewall rules..."
-          doctl databases firewalls replace ${{ env.DB_CLUSTER_ID }} --rules "$RULES"
+          eval "doctl databases firewalls replace ${{ env.DB_CLUSTER_ID }} $RULE_FLAGS"
           echo "Firewall updated. Waiting 10s for propagation..."
           sleep 10
 
@@ -84,14 +84,14 @@ jobs:
         run: |
           echo "Removing runner IP ${{ steps.firewall.outputs.runner_ip }} from database firewall..."
           RUNNER_IP="${{ steps.firewall.outputs.runner_ip }}"
-          RULES=$(doctl databases firewalls list ${{ env.DB_CLUSTER_ID }} --output json | \
+          RULE_FLAGS=$(doctl databases firewalls list ${{ env.DB_CLUSTER_ID }} --output json | \
             python3 -c "
           import sys, json
           rules = json.load(sys.stdin)
-          filtered = [{'uuid': r['uuid'], 'type': r['type'], 'value': r['value']} for r in rules if r['value'] != '${RUNNER_IP}']
-          print(json.dumps(filtered))
+          filtered = [r for r in rules if r['value'] != '${RUNNER_IP}']
+          print(' '.join(['--rule ' + r['type'] + ':' + r['value'] for r in filtered]))
           ")
-          doctl databases firewalls replace ${{ env.DB_CLUSTER_ID }} --rules "$RULES"
+          eval "doctl databases firewalls replace ${{ env.DB_CLUSTER_ID }} $RULE_FLAGS"
           echo "Runner IP removed from firewall."
 
   # ──────────────────────────────────────────
