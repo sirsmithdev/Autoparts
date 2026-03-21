@@ -9,7 +9,8 @@ import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { registerRoutes } from "./routes/index.js";
-import { cleanupStaleCarts, cleanupExpiredPendingOrders } from "./storage/onlineStore.js";
+import { cleanupStaleCarts } from "./storage/cart.js";
+import { cleanupExpiredPendingOrders } from "./storage/orders.js";
 import { startQueueProcessor } from "./sync/queueProcessor.js";
 
 const app = express();
