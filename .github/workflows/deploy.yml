@@ -58,22 +58,15 @@ jobs:
           echo "runner_ip=${RUNNER_IP}" >> $GITHUB_OUTPUT
           echo "Adding runner IP ${RUNNER_IP} to database firewall..."
 
-          # Get existing firewall rules
-          EXISTING_RULES=$(doctl databases firewalls list ${{ env.DB_CLUSTER_ID }} --format UUID,Type,Value --no-header)
-          echo "Existing rules:"
-          echo "$EXISTING_RULES"
-
-          # Build rules JSON: keep existing + add runner IP
-          RULES="["
-          while IFS= read -r line; do
-            if [ -n "$line" ]; then
-              UUID=$(echo "$line" | awk '{print $1}')
-              TYPE=$(echo "$line" | awk '{print $2}')
-              VALUE=$(echo "$line" | awk '{print $3}')
-              RULES="${RULES}{\"uuid\":\"${UUID}\",\"type\":\"${TYPE}\",\"value\":\"${VALUE}\"},"
-            fi
-          done <<< "$EXISTING_RULES"
-          RULES="${RULES}{\"type\":\"ip_addr\",\"value\":\"${RUNNER_IP}\"}]"
+          # Get existing rules as JSON and build new rules array with runner IP added
+          RULES=$(doctl databases firewalls list ${{ env.DB_CLUSTER_ID }} --output json | \
+            python3 -c "
+          import sys, json
+          rules = json.load(sys.stdin)
+          existing = [{'uuid': r['uuid'], 'type': r['type'], 'value': r['value']} for r in rules]
+          existing.append({'type': 'ip_addr', 'value': '${RUNNER_IP}'})
+          print(json.dumps(existing))
+          ")
 
           echo "Updating firewall rules..."
           doctl databases firewalls replace ${{ env.DB_CLUSTER_ID }} --rules "$RULES"
@@ -90,22 +83,14 @@ jobs:
         if: always()
         run: |
           echo "Removing runner IP ${{ steps.firewall.outputs.runner_ip }} from database firewall..."
-          # Get current rules, filter out the runner IP
-          EXISTING_RULES=$(doctl databases firewalls list ${{ env.DB_CLUSTER_ID }} --format UUID,Type,Value --no-header)
-          RULES="["
-          FIRST=true
-          while IFS= read -r line; do
-            if [ -n "$line" ]; then
-              VALUE=$(echo "$line" | awk '{print $3}')
-              if [ "$VALUE" != "${{ steps.firewall.outputs.runner_ip }}" ]; then
-                UUID=$(echo "$line" | awk '{print $1}')
-                TYPE=$(echo "$line" | awk '{print $2}')
-                if [ "$FIRST" = true ]; then FIRST=false; else RULES="${RULES},"; fi
-                RULES="${RULES}{\"uuid\":\"${UUID}\",\"type\":\"${TYPE}\",\"value\":\"${VALUE}\"}"
-              fi
-            fi
-          done <<< "$EXISTING_RULES"
-          RULES="${RULES}]"
+          RUNNER_IP="${{ steps.firewall.outputs.runner_ip }}"
+          RULES=$(doctl databases firewalls list ${{ env.DB_CLUSTER_ID }} --output json | \
+            python3 -c "
+          import sys, json
+          rules = json.load(sys.stdin)
+          filtered = [{'uuid': r['uuid'], 'type': r['type'], 'value': r['value']} for r in rules if r['value'] != '${RUNNER_IP}']
+          print(json.dumps(filtered))
+          ")
           doctl databases firewalls replace ${{ env.DB_CLUSTER_ID }} --rules "$RULES"
           echo "Runner IP removed from firewall."
 
