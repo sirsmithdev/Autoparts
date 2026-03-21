@@ -14,9 +14,14 @@ async function main() {
     process.exit(1);
   }
 
+  // Strip ssl-mode from URL (mysql2 doesn't understand it)
+  const cleanUrl = new URL(url);
+  cleanUrl.searchParams.delete("ssl-mode");
+  cleanUrl.searchParams.delete("sslmode");
+
   console.log("Connecting to database...");
   const connection = await mysql.createConnection({
-    uri: url,
+    uri: cleanUrl.toString(),
     ssl: { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== "false" },
   });
 

@@ -42,6 +42,10 @@ RUN npm install --omit=dev --ignore-scripts && \
 # Copy built server from builder
 COPY --from=builder /app/dist ./dist
 
+# Copy migration files and runner script
+COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/scripts/run-migrations.js ./scripts/run-migrations.js
+
 # Copy built Next.js app from builder
 COPY --from=builder /app/client/.next ./client/.next
 COPY --from=builder /app/client/public ./client/public
@@ -61,5 +65,5 @@ EXPOSE 5002
 # Set environment
 ENV NODE_ENV=production
 
-# Start the Express server (which also serves Next.js pages)
-CMD ["node", "dist/server.js"]
+# Run migrations then start the server
+CMD ["sh", "-c", "node scripts/run-migrations.js && node dist/server.js"]
