@@ -41,6 +41,11 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "parts-store" });
 });
 
+// Root redirect → storefront
+app.get("/", (_req, res) => {
+  res.redirect(301, "/parts");
+});
+
 // Register API routes
 registerRoutes(app);
 
