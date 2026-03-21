@@ -65,5 +65,5 @@ EXPOSE 5002
 # Set environment
 ENV NODE_ENV=production
 
-# Run migrations (best-effort) then start the server
-CMD ["sh", "-c", "node scripts/run-migrations.js || echo 'Migration failed - starting server anyway'; node dist/server.js"]
+# Start the Express server (migrations run in CI before deploy)
+CMD ["node", "dist/server.js"]
