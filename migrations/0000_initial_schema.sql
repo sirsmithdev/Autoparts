@@ -74,7 +74,7 @@ CREATE TABLE `online_store_orders` (
 	`tax_amount` decimal(10,2) NOT NULL DEFAULT '0.00',
 	`total` decimal(10,2) NOT NULL DEFAULT '0.00',
 	`payment_transaction_id` varchar(36),
-	`payment_status` varchar(20) DEFAULT 'pending',
+	`payment_status` enum('pending','paid','refunded','voided') DEFAULT 'pending',
 	`pick_list_id` varchar(36),
 	`tracking_number` text,
 	`customer_name` text,
@@ -222,7 +222,8 @@ CREATE TABLE `pos_sessions` (
 	`status` enum('open','closed') NOT NULL DEFAULT 'open',
 	`notes` text,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
-	CONSTRAINT `pos_sessions_id` PRIMARY KEY(`id`)
+	CONSTRAINT `pos_sessions_id` PRIMARY KEY(`id`),
+	CONSTRAINT `pos_sessions_session_number_unique` UNIQUE(`session_number`)
 );
 --> statement-breakpoint
 CREATE TABLE `pos_transaction_items` (
@@ -490,15 +491,10 @@ ALTER TABLE `online_store_order_items` ADD CONSTRAINT `online_store_order_items_
 ALTER TABLE `online_store_order_items` ADD CONSTRAINT `online_store_order_items_product_id_products_id_fk` FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `online_store_orders` ADD CONSTRAINT `online_store_orders_customer_id_customers_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `online_store_orders` ADD CONSTRAINT `online_store_orders_delivery_zone_id_delivery_zones_id_fk` FOREIGN KEY (`delivery_zone_id`) REFERENCES `delivery_zones`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `online_store_orders` ADD CONSTRAINT `online_store_orders_packed_by_customers_id_fk` FOREIGN KEY (`packed_by`) REFERENCES `customers`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `online_store_orders` ADD CONSTRAINT `online_store_orders_cancelled_by_customers_id_fk` FOREIGN KEY (`cancelled_by`) REFERENCES `customers`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `online_store_return_items` ADD CONSTRAINT `online_store_return_items_return_id_online_store_returns_id_fk` FOREIGN KEY (`return_id`) REFERENCES `online_store_returns`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `online_store_return_items` ADD CONSTRAINT `online_store_return_items_order_item_id_online_store_order_items_id_fk` FOREIGN KEY (`order_item_id`) REFERENCES `online_store_order_items`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `online_store_returns` ADD CONSTRAINT `online_store_returns_order_id_online_store_orders_id_fk` FOREIGN KEY (`order_id`) REFERENCES `online_store_orders`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `online_store_returns` ADD CONSTRAINT `online_store_returns_customer_id_customers_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `online_store_returns` ADD CONSTRAINT `online_store_returns_approved_by_customers_id_fk` FOREIGN KEY (`approved_by`) REFERENCES `customers`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `online_store_returns` ADD CONSTRAINT `online_store_returns_rejected_by_customers_id_fk` FOREIGN KEY (`rejected_by`) REFERENCES `customers`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `online_store_returns` ADD CONSTRAINT `online_store_returns_received_by_customers_id_fk` FOREIGN KEY (`received_by`) REFERENCES `customers`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `payment_methods` ADD CONSTRAINT `payment_methods_customer_id_customers_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `pick_list_items` ADD CONSTRAINT `pick_list_items_pick_list_id_pick_lists_id_fk` FOREIGN KEY (`pick_list_id`) REFERENCES `pick_lists`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `pick_list_items` ADD CONSTRAINT `pick_list_items_product_id_products_id_fk` FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -522,13 +518,10 @@ ALTER TABLE `stock_receipt_items` ADD CONSTRAINT `stock_receipt_items_receipt_id
 ALTER TABLE `stock_receipt_items` ADD CONSTRAINT `stock_receipt_items_product_id_products_id_fk` FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `stock_receipt_items` ADD CONSTRAINT `stock_receipt_items_bin_id_warehouse_bins_id_fk` FOREIGN KEY (`bin_id`) REFERENCES `warehouse_bins`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `warehouse_bins` ADD CONSTRAINT `warehouse_bins_location_id_warehouse_locations_id_fk` FOREIGN KEY (`location_id`) REFERENCES `warehouse_locations`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX `idx_customers_email` ON `customers` (`email`);--> statement-breakpoint
-CREATE INDEX `idx_customers_google_id` ON `customers` (`google_id`);--> statement-breakpoint
 CREATE INDEX `idx_order_items_order` ON `online_store_order_items` (`order_id`);--> statement-breakpoint
 CREATE INDEX `idx_order_items_product` ON `online_store_order_items` (`product_id`);--> statement-breakpoint
 CREATE INDEX `idx_online_orders_customer` ON `online_store_orders` (`customer_id`);--> statement-breakpoint
 CREATE INDEX `idx_online_orders_status` ON `online_store_orders` (`status`);--> statement-breakpoint
-CREATE INDEX `idx_online_orders_number` ON `online_store_orders` (`order_number`);--> statement-breakpoint
 CREATE INDEX `idx_online_orders_created` ON `online_store_orders` (`created_at`);--> statement-breakpoint
 CREATE INDEX `idx_return_items_return` ON `online_store_return_items` (`return_id`);--> statement-breakpoint
 CREATE INDEX `idx_returns_order` ON `online_store_returns` (`order_id`);--> statement-breakpoint
@@ -540,7 +533,6 @@ CREATE INDEX `idx_pick_lists_status` ON `pick_lists` (`status`);--> statement-br
 CREATE INDEX `idx_pick_lists_source` ON `pick_lists` (`source_type`,`source_id`);--> statement-breakpoint
 CREATE INDEX `idx_pos_transaction_items_txn` ON `pos_transaction_items` (`transaction_id`);--> statement-breakpoint
 CREATE INDEX `idx_pos_transactions_session` ON `pos_transactions` (`session_id`);--> statement-breakpoint
-CREATE INDEX `idx_pos_transactions_number` ON `pos_transactions` (`transaction_number`);--> statement-breakpoint
 CREATE INDEX `idx_pos_transactions_created` ON `pos_transactions` (`created_at`);--> statement-breakpoint
 CREATE INDEX `idx_bin_assignments_product` ON `product_bin_assignments` (`product_id`);--> statement-breakpoint
 CREATE INDEX `idx_bin_assignments_bin` ON `product_bin_assignments` (`bin_id`);--> statement-breakpoint
@@ -551,18 +543,15 @@ CREATE INDEX `idx_product_images_product` ON `product_images` (`product_id`);-->
 CREATE INDEX `idx_product_numbers_product_id` ON `product_numbers` (`product_id`);--> statement-breakpoint
 CREATE INDEX `idx_product_numbers_part_number` ON `product_numbers` (`part_number`);--> statement-breakpoint
 CREATE INDEX `idx_product_numbers_brand` ON `product_numbers` (`brand`);--> statement-breakpoint
-CREATE INDEX `idx_products_part_number` ON `products` (`part_number`);--> statement-breakpoint
-CREATE INDEX `idx_products_barcode` ON `products` (`barcode`);--> statement-breakpoint
 CREATE INDEX `idx_products_category` ON `products` (`category`);--> statement-breakpoint
-CREATE INDEX `idx_products_garage_part_id` ON `products` (`garage_part_id`);--> statement-breakpoint
 CREATE INDEX `idx_products_active_featured` ON `products` (`is_active`,`is_featured`);--> statement-breakpoint
 CREATE INDEX `idx_refresh_tokens_customer` ON `refresh_tokens` (`customer_id`);--> statement-breakpoint
-CREATE INDEX `idx_refresh_tokens_hash` ON `refresh_tokens` (`token_hash`);--> statement-breakpoint
 CREATE INDEX `idx_cart_items_cart` ON `shopping_cart_items` (`cart_id`);--> statement-breakpoint
 CREATE INDEX `idx_cart_customer` ON `shopping_carts` (`customer_id`);--> statement-breakpoint
 CREATE INDEX `idx_stock_movements_product` ON `stock_movements` (`product_id`);--> statement-breakpoint
 CREATE INDEX `idx_stock_movements_type` ON `stock_movements` (`movement_type`);--> statement-breakpoint
 CREATE INDEX `idx_stock_movements_created` ON `stock_movements` (`created_at`);--> statement-breakpoint
+CREATE INDEX `idx_stock_movements_reference` ON `stock_movements` (`reference_type`,`reference_id`);--> statement-breakpoint
 CREATE INDEX `idx_receipt_items_receipt` ON `stock_receipt_items` (`receipt_id`);--> statement-breakpoint
 CREATE INDEX `idx_receipt_items_product` ON `stock_receipt_items` (`product_id`);--> statement-breakpoint
 CREATE INDEX `idx_sync_log_direction` ON `sync_log` (`direction`);--> statement-breakpoint
@@ -570,5 +559,4 @@ CREATE INDEX `idx_sync_log_status` ON `sync_log` (`status`);--> statement-breakp
 CREATE INDEX `idx_sync_log_created` ON `sync_log` (`created_at`);--> statement-breakpoint
 CREATE INDEX `idx_sync_queue_status` ON `sync_queue` (`status`);--> statement-breakpoint
 CREATE INDEX `idx_sync_queue_next_retry` ON `sync_queue` (`next_retry_at`);--> statement-breakpoint
-CREATE INDEX `idx_warehouse_bins_location` ON `warehouse_bins` (`location_id`);--> statement-breakpoint
-CREATE INDEX `idx_warehouse_bins_code` ON `warehouse_bins` (`bin_code`);
+CREATE INDEX `idx_warehouse_bins_location` ON `warehouse_bins` (`location_id`);

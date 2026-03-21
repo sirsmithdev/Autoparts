@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "9bb80f3b-a62b-4332-be65-38b802602895",
+  "id": "8e9d10a2-4bc6-4c80-9dac-a1cbfa018ee9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "customers": {
@@ -118,22 +118,7 @@
           "default": "(now())"
         }
       },
-      "indexes": {
-        "idx_customers_email": {
-          "name": "idx_customers_email",
-          "columns": [
-            "email"
-          ],
-          "isUnique": false
-        },
-        "idx_customers_google_id": {
-          "name": "idx_customers_google_id",
-          "columns": [
-            "google_id"
-          ],
-          "isUnique": false
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
         "customers_id": {
@@ -554,7 +539,7 @@
         },
         "payment_status": {
           "name": "payment_status",
-          "type": "varchar(20)",
+          "type": "enum('pending','paid','refunded','voided')",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
@@ -718,13 +703,6 @@
           ],
           "isUnique": false
         },
-        "idx_online_orders_number": {
-          "name": "idx_online_orders_number",
-          "columns": [
-            "order_number"
-          ],
-          "isUnique": false
-        },
         "idx_online_orders_created": {
           "name": "idx_online_orders_created",
           "columns": [
@@ -753,32 +731,6 @@
           "tableTo": "delivery_zones",
           "columnsFrom": [
             "delivery_zone_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "online_store_orders_packed_by_customers_id_fk": {
-          "name": "online_store_orders_packed_by_customers_id_fk",
-          "tableFrom": "online_store_orders",
-          "tableTo": "customers",
-          "columnsFrom": [
-            "packed_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "online_store_orders_cancelled_by_customers_id_fk": {
-          "name": "online_store_orders_cancelled_by_customers_id_fk",
-          "tableFrom": "online_store_orders",
-          "tableTo": "customers",
-          "columnsFrom": [
-            "cancelled_by"
           ],
           "columnsTo": [
             "id"
@@ -1138,45 +1090,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "online_store_returns_approved_by_customers_id_fk": {
-          "name": "online_store_returns_approved_by_customers_id_fk",
-          "tableFrom": "online_store_returns",
-          "tableTo": "customers",
-          "columnsFrom": [
-            "approved_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "online_store_returns_rejected_by_customers_id_fk": {
-          "name": "online_store_returns_rejected_by_customers_id_fk",
-          "tableFrom": "online_store_returns",
-          "tableTo": "customers",
-          "columnsFrom": [
-            "rejected_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "online_store_returns_received_by_customers_id_fk": {
-          "name": "online_store_returns_received_by_customers_id_fk",
-          "tableFrom": "online_store_returns",
-          "tableTo": "customers",
-          "columnsFrom": [
-            "received_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -1815,7 +1728,14 @@
           ]
         }
       },
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "pos_sessions_session_number_unique": {
+          "name": "pos_sessions_session_number_unique",
+          "columns": [
+            "session_number"
+          ]
+        }
+      },
       "checkConstraint": {}
     },
     "pos_transaction_items": {
@@ -2127,13 +2047,6 @@
           "name": "idx_pos_transactions_session",
           "columns": [
             "session_id"
-          ],
-          "isUnique": false
-        },
-        "idx_pos_transactions_number": {
-          "name": "idx_pos_transactions_number",
-          "columns": [
-            "transaction_number"
           ],
           "isUnique": false
         },
@@ -2800,31 +2713,10 @@
         }
       },
       "indexes": {
-        "idx_products_part_number": {
-          "name": "idx_products_part_number",
-          "columns": [
-            "part_number"
-          ],
-          "isUnique": false
-        },
-        "idx_products_barcode": {
-          "name": "idx_products_barcode",
-          "columns": [
-            "barcode"
-          ],
-          "isUnique": false
-        },
         "idx_products_category": {
           "name": "idx_products_category",
           "columns": [
             "category"
-          ],
-          "isUnique": false
-        },
-        "idx_products_garage_part_id": {
-          "name": "idx_products_garage_part_id",
-          "columns": [
-            "garage_part_id"
           ],
           "isUnique": false
         },
@@ -2913,13 +2805,6 @@
           "name": "idx_refresh_tokens_customer",
           "columns": [
             "customer_id"
-          ],
-          "isUnique": false
-        },
-        "idx_refresh_tokens_hash": {
-          "name": "idx_refresh_tokens_hash",
-          "columns": [
-            "token_hash"
           ],
           "isUnique": false
         }
@@ -3231,6 +3116,14 @@
           "name": "idx_stock_movements_created",
           "columns": [
             "created_at"
+          ],
+          "isUnique": false
+        },
+        "idx_stock_movements_reference": {
+          "name": "idx_stock_movements_reference",
+          "columns": [
+            "reference_type",
+            "reference_id"
           ],
           "isUnique": false
         }
@@ -3893,13 +3786,6 @@
           "name": "idx_warehouse_bins_location",
           "columns": [
             "location_id"
-          ],
-          "isUnique": false
-        },
-        "idx_warehouse_bins_code": {
-          "name": "idx_warehouse_bins_code",
-          "columns": [
-            "bin_code"
           ],
           "isUnique": false
         }
