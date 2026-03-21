@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import {
   ShoppingCart, User, LogOut, Search, Store,
-  Package, RotateCcw, ChevronDown, Menu, X,
+  Package, RotateCcw, ChevronDown, Menu, X, Settings,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -150,6 +150,9 @@ export function StoreHeader() {
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push("/account")}>
+                      <Settings className="h-4 w-4 mr-2" /> Account
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/orders")}>
                       <Package className="h-4 w-4 mr-2" /> Orders
                     </DropdownMenuItem>
