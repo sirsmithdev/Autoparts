@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import {
   ShoppingCart, Package, RefreshCw, CheckCircle2, Loader2,
   Minus, Plus, Car, Info, ChevronDown, ChevronUp, AlertCircle,
+  Truck, RotateCcw, Headphones, Star,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -150,6 +151,16 @@ export function PartDetailClient({ detail }: { detail: PartDetail }) {
           )}
           <h1 className="text-2xl lg:text-3xl font-bold leading-tight">{part.name}</h1>
 
+          {/* Star rating */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star key={i} className={`h-4 w-4 ${i <= 4 ? "fill-rating text-rating" : "fill-muted text-muted"}`} />
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">4 reviews</span>
+          </div>
+
           {/* Part Numbers */}
           <div className="space-y-1">
             <p className="text-sm font-mono text-muted-foreground">
@@ -230,6 +241,21 @@ export function PartDetailClient({ detail }: { detail: PartDetail }) {
           {part.description && (
             <p className="text-sm text-muted-foreground leading-relaxed">{part.description}</p>
           )}
+
+          {/* Benefits bar */}
+          <div className="grid grid-cols-3 gap-3 pt-2">
+            {[
+              { icon: Truck, label: "Free Shipping", sublabel: "On orders over $15,000" },
+              { icon: RotateCcw, label: "Easy Return", sublabel: "30-day returns" },
+              { icon: Headphones, label: "Support", sublabel: "Mon-Sat 8am-5pm" },
+            ].map(({ icon: Icon, label, sublabel }) => (
+              <div key={label} className="flex flex-col items-center text-center p-3 border rounded-md bg-muted/30">
+                <Icon className="h-5 w-5 text-primary mb-1.5" />
+                <span className="text-xs font-semibold">{label}</span>
+                <span className="text-[10px] text-muted-foreground">{sublabel}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -218,7 +218,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* ---- General Store Settings ---- */}
-      <div className="border rounded-xl bg-card">
+      <div className="border rounded-md bg-card">
         <div className="p-5 border-b">
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-muted-foreground" />
@@ -328,7 +328,7 @@ export default function AdminSettingsPage() {
 
       {/* ---- Return Policy & Order Limits ---- */}
       <form onSubmit={handleSubmit((data) => policyMutation.mutate(data))} className="space-y-6">
-        <div className="border rounded-xl bg-card">
+        <div className="border rounded-md bg-card">
           <div className="p-5 border-b">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-muted-foreground" />
@@ -379,7 +379,7 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        <div className="border rounded-xl bg-card">
+        <div className="border rounded-md bg-card">
           <div className="p-5 border-b">
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-muted-foreground" />
@@ -419,7 +419,7 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        <div className="border rounded-xl bg-card">
+        <div className="border rounded-md bg-card">
           <div className="p-5 border-b">
             <h2 className="font-semibold">Currency</h2>
           </div>
@@ -447,7 +447,7 @@ export default function AdminSettingsPage() {
       </form>
 
       {/* ---- Delivery Zones ---- */}
-      <div className="border rounded-xl bg-card">
+      <div className="border rounded-md bg-card">
         <div className="p-5 border-b flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-muted-foreground" />
@@ -541,7 +541,7 @@ export default function AdminSettingsPage() {
       {zoneDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={() => setZoneDialog(false)} />
-          <div role="dialog" aria-modal="true" className="relative bg-card border rounded-xl shadow-lg w-full max-w-md mx-4 p-6">
+          <div role="dialog" aria-modal="true" className="relative bg-card border rounded-md shadow-lg w-full max-w-md mx-4 p-6">
             <h3 className="text-lg font-semibold mb-4">
               {editingZone ? "Edit Delivery Zone" : "Add Delivery Zone"}
             </h3>
@@ -631,7 +631,7 @@ export default function AdminSettingsPage() {
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={() => setDeleteConfirm(null)} />
-          <div role="dialog" aria-modal="true" className="relative bg-card border rounded-xl shadow-lg w-full max-w-sm mx-4 p-6">
+          <div role="dialog" aria-modal="true" className="relative bg-card border rounded-md shadow-lg w-full max-w-sm mx-4 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-red-50 rounded-lg">
                 <AlertTriangle className="h-5 w-5 text-red-600" />

@@ -127,28 +127,28 @@ export default function PosReportsPage() {
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="border rounded-xl bg-card p-5">
+            <div className="border rounded-md bg-card p-5">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <DollarSign className="h-4 w-4" />
                 <span className="text-xs font-medium">Total Sales</span>
               </div>
               <p className="text-2xl font-bold">{formatPrice(report.totalSales)}</p>
             </div>
-            <div className="border rounded-xl bg-card p-5">
+            <div className="border rounded-md bg-card p-5">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <RotateCcw className="h-4 w-4" />
                 <span className="text-xs font-medium">Total Refunds</span>
               </div>
               <p className="text-2xl font-bold text-destructive">{formatPrice(report.totalRefunds)}</p>
             </div>
-            <div className="border rounded-xl bg-card p-5">
+            <div className="border rounded-md bg-card p-5">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <TrendingUp className="h-4 w-4" />
                 <span className="text-xs font-medium">Net Sales</span>
               </div>
               <p className="text-2xl font-bold">{formatPrice(report.netSales)}</p>
             </div>
-            <div className="border rounded-xl bg-card p-5">
+            <div className="border rounded-md bg-card p-5">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Hash className="h-4 w-4" />
                 <span className="text-xs font-medium">Transactions</span>
@@ -158,7 +158,7 @@ export default function PosReportsPage() {
           </div>
 
           {/* Payment Breakdown */}
-          <div className="border rounded-xl bg-card overflow-hidden">
+          <div className="border rounded-md bg-card overflow-hidden">
             <div className="px-5 py-3 bg-muted/40 border-b">
               <h2 className="font-semibold text-sm">Payment Breakdown</h2>
             </div>
@@ -183,7 +183,7 @@ export default function PosReportsPage() {
 
           {/* Top Products */}
           {report.topProducts.length > 0 && (
-            <div className="border rounded-xl bg-card overflow-hidden">
+            <div className="border rounded-md bg-card overflow-hidden">
               <div className="px-5 py-3 bg-muted/40 border-b">
                 <h2 className="font-semibold text-sm">Top 10 Products</h2>
               </div>
@@ -215,7 +215,7 @@ export default function PosReportsPage() {
           )}
 
           {/* Session History */}
-          <div className="border rounded-xl bg-card overflow-hidden">
+          <div className="border rounded-md bg-card overflow-hidden">
             <div className="px-5 py-3 bg-muted/40 border-b">
               <h2 className="font-semibold text-sm">Session History</h2>
             </div>
@@ -264,7 +264,7 @@ export default function PosReportsPage() {
 
           {/* Session Detail */}
           {selectedSession && (
-            <div className="border rounded-xl bg-card overflow-hidden">
+            <div className="border rounded-md bg-card overflow-hidden">
               <div className="px-5 py-3 bg-muted/40 border-b flex items-center justify-between">
                 <h2 className="font-semibold text-sm flex items-center gap-2">
                   <Clock className="h-4 w-4" />

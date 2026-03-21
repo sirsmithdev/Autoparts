@@ -194,7 +194,7 @@ function CreateReceiptForm() {
   });
 
   return (
-    <div className="border rounded-xl bg-card overflow-hidden">
+    <div className="border rounded-md bg-card overflow-hidden">
       <div className="px-5 py-3 bg-muted/40 border-b">
         <h2 className="font-semibold text-sm">Create Receipt</h2>
       </div>
@@ -372,7 +372,7 @@ function ReceiptDetail({
       <div
         role="dialog"
         aria-modal="true"
-        className="bg-card border rounded-xl w-full max-w-lg shadow-lg max-h-[80vh] overflow-auto"
+        className="bg-card border rounded-md w-full max-w-lg shadow-lg max-h-[80vh] overflow-auto"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/40">
@@ -509,7 +509,7 @@ export default function GoodsReceiptPage() {
           </select>
         </div>
 
-        <div className="border rounded-xl bg-card overflow-hidden">
+        <div className="border rounded-md bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

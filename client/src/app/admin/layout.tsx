@@ -49,11 +49,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen flex bg-muted/30">
       {/* Sidebar */}
-      <aside className="w-60 bg-[hsl(222,47%,11%)] text-white flex flex-col shrink-0">
+      <aside className="w-60 bg-[hsl(var(--header-bg))] text-white flex flex-col shrink-0">
         {/* Brand */}
         <div className="p-5 border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
               <ShoppingBag className="h-4 w-4 text-white" />
             </div>
             <div>
@@ -72,7 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-primary text-white"
                     : "text-gray-400 hover:text-white hover:bg-white/10"

@@ -7,7 +7,8 @@ import { CategorySidebar } from "@/components/CategorySidebar";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { PartGridSkeleton } from "@/components/PartCardSkeleton";
 import { Suspense } from "react";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Headphones, Cog, Zap } from "lucide-react";
+import Link from "next/link";
 
 interface CatalogResult {
   parts: Array<{
@@ -19,7 +20,7 @@ interface CatalogResult {
 }
 
 const SORT_OPTIONS = [
-  { value: "name", label: "Name A–Z" },
+  { value: "name", label: "Name A\u2013Z" },
   { value: "price_asc", label: "Price: Low to High" },
   { value: "price_desc", label: "Price: High to Low" },
   { value: "newest", label: "Newest First" },
@@ -82,15 +83,40 @@ function SearchContent() {
 
   const breadcrumbs: { label: string; href?: string }[] = [
     { label: "Home", href: "/" },
-    { label: "Search", href: "/search" },
+    { label: "Shop", href: "/search" },
   ];
   if (category) breadcrumbs.push({ label: category });
   else if (q) breadcrumbs.push({ label: `"${q}"` });
   else if (make) breadcrumbs.push({ label: `${year} ${make} ${model}` });
 
+  const isDefaultView = !q && !category && !make;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       <Breadcrumbs items={breadcrumbs} />
+
+      {/* Page title */}
+      <h1 className="text-2xl font-bold text-center">Shop</h1>
+
+      {/* Featured category banners - only on default shop view */}
+      {isDefaultView && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { label: "Featured Products", icon: Cog, href: "/search?featured=true", color: "from-blue-500/10 to-blue-600/5" },
+            { label: "Aftermarket Items", icon: Headphones, href: "/search?condition=new", color: "from-orange-500/10 to-orange-600/5" },
+            { label: "Electrical Parts", icon: Zap, href: "/search?category=Electrical", color: "from-green-500/10 to-green-600/5" },
+          ].map(({ label, icon: Icon, href, color }) => (
+            <Link
+              key={label}
+              href={href}
+              className={`flex items-center gap-4 p-5 rounded-lg bg-gradient-to-r ${color} border hover:shadow-md transition-shadow`}
+            >
+              <Icon className="h-10 w-10 text-muted-foreground/60" />
+              <span className="font-semibold text-sm">{label}</span>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Mobile category selector */}
       <div className="lg:hidden">
@@ -111,57 +137,35 @@ function SearchContent() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-bold">
+              <h2 className="text-lg font-semibold">
                 {q ? `Results for "${q}"` : make ? `Parts for ${year} ${make} ${model}` : category || "All Parts"}
-              </h1>
+              </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {total} part{total !== 1 ? "s" : ""} found
               </p>
             </div>
-            <select
-              value={orderBy}
-              onChange={(e) => updateParam("orderBy", e.target.value)}
-              className="border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring w-full sm:w-auto"
-            >
-              {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-
-          {/* Filter bar */}
-          <div className="flex flex-wrap items-center gap-3 mb-6 p-3 bg-muted/50 rounded-lg">
-            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={inStockOnly}
-                onChange={(e) => updateParam("inStockOnly", e.target.checked ? "true" : "")}
-                className="rounded border-gray-300"
-              />
-              In stock only
-            </label>
-            <select
-              value={condition}
-              onChange={(e) => updateParam("condition", e.target.value)}
-              className="border rounded-md px-2.5 py-1.5 text-sm bg-background"
-            >
-              <option value="">All conditions</option>
-              <option value="new">New</option>
-              <option value="refurbished">Refurbished</option>
-              <option value="used">Used</option>
-            </select>
-            <select
-              value={manufacturer}
-              onChange={(e) => updateParam("manufacturer", e.target.value)}
-              className="border rounded-md px-2.5 py-1.5 text-sm bg-background"
-            >
-              <option value="">All manufacturers</option>
-              {manufacturers.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
+            <div className="flex items-center gap-3">
+              <select
+                value={manufacturer}
+                onChange={(e) => updateParam("manufacturer", e.target.value)}
+                className="border rounded-md px-2.5 py-2 text-sm bg-background"
+              >
+                <option value="">All manufacturers</option>
+                {manufacturers.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <select
+                value={orderBy}
+                onChange={(e) => updateParam("orderBy", e.target.value)}
+                className="border rounded-md px-2.5 py-2 text-sm bg-background"
+              >
+                {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
           </div>
 
           {/* Results */}
           {isLoading ? (
-            <PartGridSkeleton count={8} />
+            <PartGridSkeleton count={9} />
           ) : parts.length === 0 ? (
             <div className="text-center py-20 space-y-3">
               <Search className="h-12 w-12 text-muted-foreground/30 mx-auto" />
@@ -169,7 +173,7 @@ function SearchContent() {
               <p className="text-sm text-muted-foreground">Try adjusting your filters or search terms.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {parts.map((part) => <PartCard key={part.id} {...part} />)}
             </div>
           )}
@@ -184,13 +188,28 @@ function SearchContent() {
                   p.set("page", String(page - 1));
                   router.push(`/search?${p}`);
                 }}
-                className="inline-flex items-center gap-1 px-3 py-2 border rounded-md text-sm font-medium disabled:opacity-40 hover:bg-accent transition-colors"
+                className="inline-flex items-center gap-1 px-4 py-2 border rounded-md text-sm font-medium disabled:opacity-40 hover:bg-accent transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" /> Previous
               </button>
-              <span className="text-sm text-muted-foreground px-3">
-                Page {page} of {totalPages}
-              </span>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => {
+                      const p = new URLSearchParams(searchParams);
+                      p.set("page", String(pageNum));
+                      router.push(`/search?${p}`);
+                    }}
+                    className={`px-3 py-2 border rounded-md text-sm font-medium transition-colors ${
+                      page === pageNum ? "bg-primary text-white border-primary" : "hover:bg-accent"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
               <button
                 disabled={page >= totalPages}
                 onClick={() => {
@@ -198,7 +217,7 @@ function SearchContent() {
                   p.set("page", String(page + 1));
                   router.push(`/search?${p}`);
                 }}
-                className="inline-flex items-center gap-1 px-3 py-2 border rounded-md text-sm font-medium disabled:opacity-40 hover:bg-accent transition-colors"
+                className="inline-flex items-center gap-1 px-4 py-2 border rounded-md text-sm font-medium disabled:opacity-40 hover:bg-accent transition-colors"
               >
                 Next <ChevronRight className="h-4 w-4" />
               </button>

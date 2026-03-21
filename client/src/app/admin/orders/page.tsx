@@ -75,28 +75,28 @@ export default function AdminOrdersPage() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="border rounded-xl bg-card p-5">
+          <div className="border rounded-md bg-card p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Package className="h-4 w-4" />
               <span className="text-xs font-medium">Total Orders</span>
             </div>
             <p className="text-2xl font-bold">{stats.totalOrders}</p>
           </div>
-          <div className="border rounded-xl bg-card p-5">
+          <div className="border rounded-md bg-card p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <DollarSign className="h-4 w-4" />
               <span className="text-xs font-medium">Revenue</span>
             </div>
             <p className="text-2xl font-bold">{formatPrice(stats.totalRevenue)}</p>
           </div>
-          <div className="border rounded-xl bg-card p-5">
+          <div className="border rounded-md bg-card p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <TrendingUp className="h-4 w-4" />
               <span className="text-xs font-medium">Avg Order</span>
             </div>
             <p className="text-2xl font-bold">{formatPrice(stats.avgOrderValue)}</p>
           </div>
-          <div className="border rounded-xl bg-card p-5">
+          <div className="border rounded-md bg-card p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <RotateCcw className="h-4 w-4" />
               <span className="text-xs font-medium">Return Rate</span>
@@ -135,7 +135,7 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Orders Table */}
-      <div className="border rounded-xl bg-card overflow-hidden">
+      <div className="border rounded-md bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

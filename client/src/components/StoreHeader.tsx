@@ -7,8 +7,9 @@ import { api } from "@/lib/api";
 import {
   ShoppingCart, User, LogOut, Search, Store,
   Package, RotateCcw, ChevronDown, Menu, X, Settings,
+  Heart, Grid3X3, Tag, Flame,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { HeaderVehicleSelector } from "./HeaderVehicleSelector";
 import {
@@ -82,9 +83,9 @@ export function StoreHeader() {
   return (
     <header className="sticky top-0 z-50">
       {/* Main dark header bar */}
-      <div className="bg-[hsl(222,47%,11%)] text-white">
+      <div className="bg-[hsl(var(--header-bg))] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center gap-3 h-16">
+          <div className="flex items-center gap-4 h-16">
             {/* Mobile menu toggle */}
             <button
               className="lg:hidden p-2 -ml-2 text-gray-300 hover:text-white"
@@ -94,58 +95,48 @@ export function StoreHeader() {
             </button>
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 font-bold text-lg shrink-0">
+            <Link href="/" className="flex items-center gap-2.5 font-bold text-lg shrink-0">
               <Store className="h-6 w-6 text-blue-400" />
               <span className="hidden sm:inline">316 Auto Parts</span>
               <span className="sm:hidden">316</span>
             </Link>
 
-            {/* Search bar */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-4">
-              <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search parts by name, number, or VIN..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-full text-sm text-white placeholder:text-gray-400 focus:outline-none focus:bg-white/15 focus:border-blue-400 transition-colors"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  disabled={searching}
-                />
-                {searching && (
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-                    Searching...
-                  </span>
-                )}
-              </div>
-            </form>
-
-            {/* Vehicle selector */}
+            {/* My Garage - vehicle selector */}
             <div className="hidden md:block">
               <HeaderVehicleSelector />
             </div>
 
-            {/* Right nav */}
-            <nav className="flex items-center gap-1">
-              {/* Cart */}
-              <Link href="/cart" className="relative p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10">
-                <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-blue-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center ring-2 ring-[hsl(222,47%,11%)]">
-                    {cartCount > 99 ? "99+" : cartCount}
-                  </span>
-                )}
-              </Link>
+            {/* Search bar */}
+            <form onSubmit={handleSearch} className="flex-1 max-w-xl hidden sm:block">
+              <div className="relative flex">
+                <input
+                  type="text"
+                  placeholder="Search popular products..."
+                  className="w-full pl-4 pr-12 py-2.5 bg-white/10 border border-white/20 rounded-l-md text-sm text-white placeholder:text-gray-400 focus:outline-none focus:bg-white/15 focus:border-blue-400 transition-colors"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={searching}
+                />
+                <button
+                  type="submit"
+                  disabled={searching}
+                  className="px-4 bg-primary hover:bg-primary/90 rounded-r-md transition-colors flex items-center justify-center"
+                >
+                  <Search className="h-4 w-4 text-white" />
+                </button>
+              </div>
+            </form>
 
+            {/* Right nav icons */}
+            <nav className="flex items-center gap-0.5 ml-auto">
               {/* User menu */}
               {isAuthenticated ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="flex items-center gap-1.5 px-2 py-2 text-sm text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10">
-                    <User className="h-4 w-4" />
-                    <span className="hidden lg:inline max-w-[100px] truncate">
+                  <DropdownMenuTrigger className="flex items-center gap-1.5 p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10">
+                    <User className="h-5 w-5" />
+                    <span className="hidden lg:inline text-xs max-w-[80px] truncate">
                       {user?.firstName || "Account"}
                     </span>
-                    <ChevronDown className="h-3 w-3 hidden lg:block" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
@@ -168,34 +159,75 @@ export function StoreHeader() {
               ) : (
                 <Link
                   href="/login"
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10"
+                  className="flex items-center gap-1.5 p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10"
                 >
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sign In</span>
+                  <User className="h-5 w-5" />
+                  <span className="hidden lg:inline text-xs">Sign In</span>
                 </Link>
               )}
+
+              {/* Wishlist placeholder */}
+              <button className="p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10 hidden sm:flex">
+                <Heart className="h-5 w-5" />
+              </button>
+
+              {/* Cart */}
+              <Link href="/cart" className="relative p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10">
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center ring-2 ring-[hsl(var(--header-bg))]">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+              </Link>
             </nav>
           </div>
+
+          {/* Mobile search bar */}
+          <form onSubmit={handleSearch} className="sm:hidden pb-3">
+            <div className="relative flex">
+              <input
+                type="text"
+                placeholder="Search products..."
+                className="w-full pl-4 pr-12 py-2.5 bg-white/10 border border-white/20 rounded-l-md text-sm text-white placeholder:text-gray-400 focus:outline-none focus:bg-white/15 focus:border-blue-400 transition-colors"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                disabled={searching}
+              />
+              <button
+                type="submit"
+                disabled={searching}
+                className="px-4 bg-primary hover:bg-primary/90 rounded-r-md transition-colors flex items-center justify-center"
+              >
+                <Search className="h-4 w-4 text-white" />
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
       {/* Category navigation bar */}
-      <div className="bg-[hsl(217,33%,17%)] border-b border-white/10">
+      <div className="bg-[hsl(var(--header-nav-bg))] border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-0">
+          <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-0">
+            {/* All Categories button */}
             <Link
               href="/search"
-              className="shrink-0 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-sm transition-colors"
+              className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-sm text-white font-medium hover:bg-white/10 rounded-sm transition-colors"
             >
-              All Parts
+              <Grid3X3 className="h-4 w-4" />
+              All Categories
             </Link>
-            <Link
-              href="/diagrams"
-              className="shrink-0 px-3 py-2.5 text-sm text-yellow-300 hover:text-yellow-100 hover:bg-white/10 rounded-sm transition-colors font-medium"
-            >
-              OEM Diagrams
+
+            <span className="w-px h-5 bg-white/20 shrink-0 mx-1" />
+
+            <Link href="/" className="shrink-0 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-sm transition-colors">
+              Home
             </Link>
-            {NAV_CATEGORIES.map((cat) => (
+            <Link href="/search" className="shrink-0 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-sm transition-colors">
+              Shop
+            </Link>
+            {NAV_CATEGORIES.slice(0, 5).map((cat) => (
               <Link
                 key={cat}
                 href={`/search?category=${encodeURIComponent(cat)}`}
@@ -204,18 +236,56 @@ export function StoreHeader() {
                 {cat}
               </Link>
             ))}
+            <Link
+              href="/diagrams"
+              className="shrink-0 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-sm transition-colors"
+            >
+              OEM Diagrams
+            </Link>
+
+            <span className="flex-1" />
+
+            {/* Right badges */}
+            <Link
+              href="/search?sort=popular"
+              className="shrink-0 flex items-center gap-1 px-3 py-2.5 text-sm text-orange-300 hover:text-orange-200 font-medium transition-colors"
+            >
+              <Flame className="h-3.5 w-3.5" />
+              Best Seller
+            </Link>
+            <Link
+              href="/search?condition=used"
+              className="shrink-0 flex items-center gap-1 px-2 py-1 text-xs font-bold text-white bg-red-500 rounded-sm transition-colors hover:bg-red-600"
+            >
+              <Tag className="h-3 w-3" />
+              SALE
+            </Link>
           </nav>
         </div>
       </div>
 
       {/* Mobile menu overlay */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 top-16">
+        <div className="lg:hidden fixed inset-0 z-40 top-[calc(4rem+2.75rem)]">
           <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative bg-[hsl(222,47%,11%)] border-b border-white/10 p-4 space-y-3">
+          <div className="relative bg-[hsl(var(--header-bg))] border-b border-white/10 p-4 space-y-3 max-h-[70vh] overflow-y-auto">
             <div className="md:hidden">
               <HeaderVehicleSelector />
             </div>
+
+            <div className="space-y-1 pt-2 border-t border-white/10">
+              {NAV_CATEGORIES.map((cat) => (
+                <Link
+                  key={cat}
+                  href={`/search?category=${encodeURIComponent(cat)}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white rounded-md hover:bg-white/10"
+                >
+                  {cat}
+                </Link>
+              ))}
+            </div>
+
             {isAuthenticated && (
               <div className="space-y-1 pt-2 border-t border-white/10">
                 <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white rounded-md hover:bg-white/10">

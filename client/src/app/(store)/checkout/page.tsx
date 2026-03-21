@@ -94,7 +94,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Cart", href: "/cart" }, { label: "Checkout" }]} />
 
       {/* Step Indicator */}
@@ -113,6 +113,10 @@ export default function CheckoutPage() {
           </div>
         ))}
       </div>
+
+      <div className="grid lg:grid-cols-3 gap-8">
+      {/* Left column - forms */}
+      <div className="lg:col-span-2 space-y-8">
 
       {/* Delivery Method */}
       <section className="space-y-4">
@@ -209,9 +213,12 @@ export default function CheckoutPage() {
         </section>
       )}
 
-      {/* Order Summary */}
-      <section className="border rounded-xl bg-card p-6 space-y-3">
-        <h2 className="text-lg font-bold">Order Summary</h2>
+      </div>
+
+      {/* Right column - Order Summary */}
+      <div>
+      <section className="border rounded-xl bg-card p-6 space-y-3 sticky top-24">
+        <h2 className="text-lg font-bold">Your order</h2>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Subtotal ({items.length} item{items.length !== 1 ? "s" : ""})</span>
@@ -227,34 +234,36 @@ export default function CheckoutPage() {
           </div>
         </div>
         <div className="flex justify-between font-bold text-lg border-t pt-4">
-          <span>Estimated Total</span>
+          <span>Total</span>
           <span>{formatPrice(subtotal + deliveryFee)}</span>
         </div>
-      </section>
 
-      {error && (
-        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </div>
-      )}
-
-      <button
-        onClick={handleCheckout}
-        disabled={isSubmitting || (deliveryMethod === "local_delivery" && (!selectedZoneId || !deliveryAddress.trim()))}
-        className="w-full py-3.5 bg-primary text-primary-foreground rounded-lg font-semibold text-base disabled:opacity-50 hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-      >
-        {isSubmitting ? (
-          <><Loader2 className="h-5 w-5 animate-spin" /> Processing...</>
-        ) : (
-          <><CreditCard className="h-5 w-5" /> Place Order & Pay</>
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
         )}
-      </button>
 
-      <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-        <ShieldCheck className="h-3.5 w-3.5" />
-        Your payment is secured with 256-bit encryption
-      </p>
+        <button
+          onClick={handleCheckout}
+          disabled={isSubmitting || (deliveryMethod === "local_delivery" && (!selectedZoneId || !deliveryAddress.trim()))}
+          className="w-full py-3 bg-destructive text-white rounded-md font-semibold text-sm disabled:opacity-50 hover:bg-destructive/90 transition-colors flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
+          ) : (
+            <>Place order</>
+          )}
+        </button>
+
+        <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Secured with 256-bit encryption
+        </p>
+      </section>
+      </div>
+      </div>
     </div>
   );
 }

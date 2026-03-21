@@ -112,7 +112,7 @@ function LocationDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-bold">{editing ? "Edit Location" : "Add Location"}</h3>
         <div className="space-y-3">
           <div>
@@ -202,7 +202,7 @@ function BinDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-bold">Add Bin</h3>
         <div className="space-y-3">
           <div>
@@ -288,7 +288,7 @@ function LocationsTab() {
         </button>
       </div>
 
-      <div className="border rounded-xl bg-card overflow-hidden">
+      <div className="border rounded-md bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -393,7 +393,7 @@ function BinsTab() {
         </button>
       </div>
 
-      <div className="border rounded-xl bg-card overflow-hidden">
+      <div className="border rounded-md bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -490,21 +490,21 @@ function OverviewTab() {
       <p className="text-sm text-muted-foreground">Warehouse summary and quick actions</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="border rounded-xl bg-card p-5">
+        <div className="border rounded-md bg-card p-5">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <MapPin className="h-4 w-4" />
             <span className="text-xs font-medium">Total Locations</span>
           </div>
           <p className="text-2xl font-bold">{totalLocations}</p>
         </div>
-        <div className="border rounded-xl bg-card p-5">
+        <div className="border rounded-md bg-card p-5">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <Grid3X3 className="h-4 w-4" />
             <span className="text-xs font-medium">Total Bins</span>
           </div>
           <p className="text-2xl font-bold">{totalBins}</p>
         </div>
-        <div className="border rounded-xl bg-card p-5">
+        <div className="border rounded-md bg-card p-5">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <Package className="h-4 w-4" />
             <span className="text-xs font-medium">Products with Bins</span>
@@ -513,7 +513,7 @@ function OverviewTab() {
         </div>
       </div>
 
-      <div className="border rounded-xl bg-card p-5 space-y-3">
+      <div className="border rounded-md bg-card p-5 space-y-3">
         <h3 className="font-semibold text-sm">Quick Actions</h3>
         <div className="flex flex-wrap gap-3">
           <Link

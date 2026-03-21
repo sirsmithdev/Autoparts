@@ -156,7 +156,7 @@ export default function AdminOrderDetailPage() {
 
       {/* Status Timeline */}
       {!isCancelled && (
-        <div className="border rounded-xl bg-card p-6">
+        <div className="border rounded-md bg-card p-6">
           <OrderTimeline
             steps={timelineSteps}
             currentStepIndex={currentStep >= 0 ? currentStep : 0}
@@ -223,7 +223,7 @@ export default function AdminOrderDetailPage() {
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Items */}
-        <div className="border rounded-xl bg-card overflow-hidden">
+        <div className="border rounded-md bg-card overflow-hidden">
           <div className="px-5 py-3 bg-muted/40 border-b">
             <h2 className="font-semibold text-sm">Items ({order.items?.length || 0})</h2>
           </div>
@@ -252,7 +252,7 @@ export default function AdminOrderDetailPage() {
         {/* Info Cards */}
         <div className="space-y-4">
           {/* Delivery */}
-          <div className="border rounded-xl bg-card p-5 space-y-3">
+          <div className="border rounded-md bg-card p-5 space-y-3">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               {isDelivery ? <Truck className="h-4 w-4 text-primary" /> : <Store className="h-4 w-4 text-primary" />}
               Delivery
@@ -275,7 +275,7 @@ export default function AdminOrderDetailPage() {
           </div>
 
           {/* Customer */}
-          <div className="border rounded-xl bg-card p-5 space-y-3">
+          <div className="border rounded-md bg-card p-5 space-y-3">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               <User className="h-4 w-4 text-primary" /> Customer
             </h3>
@@ -295,7 +295,7 @@ export default function AdminOrderDetailPage() {
           </div>
 
           {/* Staff Notes */}
-          <div className="border rounded-xl bg-card p-5 space-y-3">
+          <div className="border rounded-md bg-card p-5 space-y-3">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" /> Staff Notes
             </h3>
@@ -321,7 +321,7 @@ export default function AdminOrderDetailPage() {
       {/* Ship Dialog */}
       {shipDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShipDialog(false)}>
-          <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Ship Order</h3>
             <input
               placeholder="Tracking number"
@@ -346,7 +346,7 @@ export default function AdminOrderDetailPage() {
       {/* Cancel Dialog */}
       {cancelDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setCancelDialog(false)}>
-          <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Cancel Order</h3>
             <textarea
               placeholder="Reason for cancellation"
@@ -371,7 +371,7 @@ export default function AdminOrderDetailPage() {
       {/* Pickup Dialog */}
       {pickupDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setPickupDialog(false)}>
-          <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Customer Pickup</h3>
             <input
               placeholder="Collected by (name)"

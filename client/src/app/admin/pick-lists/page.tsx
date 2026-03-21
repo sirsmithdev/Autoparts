@@ -68,7 +68,7 @@ export default function AdminPickListsPage() {
       </div>
 
       {/* Pick Lists Table */}
-      <div className="border rounded-xl bg-card overflow-hidden">
+      <div className="border rounded-md bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

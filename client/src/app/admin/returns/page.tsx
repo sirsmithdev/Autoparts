@@ -105,28 +105,28 @@ export default function AdminReturnsPage() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="border rounded-xl bg-card p-5">
+          <div className="border rounded-md bg-card p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <RotateCcw className="h-4 w-4" />
               <span className="text-xs font-medium">Total Returns</span>
             </div>
             <p className="text-2xl font-bold">{stats.total}</p>
           </div>
-          <div className="border rounded-xl bg-card p-5">
+          <div className="border rounded-md bg-card p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Clock className="h-4 w-4" />
               <span className="text-xs font-medium">Pending Review</span>
             </div>
             <p className="text-2xl font-bold">{stats.pending}</p>
           </div>
-          <div className="border rounded-xl bg-card p-5">
+          <div className="border rounded-md bg-card p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <PackageCheck className="h-4 w-4" />
               <span className="text-xs font-medium">Approved</span>
             </div>
             <p className="text-2xl font-bold">{stats.approved}</p>
           </div>
-          <div className="border rounded-xl bg-card p-5">
+          <div className="border rounded-md bg-card p-5">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <DollarSign className="h-4 w-4" />
               <span className="text-xs font-medium">Refunded</span>
@@ -164,7 +164,7 @@ export default function AdminReturnsPage() {
       </div>
 
       {/* Returns Table */}
-      <div className="border rounded-xl bg-card overflow-hidden">
+      <div className="border rounded-md bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -286,7 +286,7 @@ export default function AdminReturnsPage() {
       {actionDialog?.type === "approve" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={() => setActionDialog(null)} />
-          <div role="dialog" aria-modal="true" className="relative bg-card border rounded-xl shadow-lg w-full max-w-md mx-4 p-6">
+          <div role="dialog" aria-modal="true" className="relative bg-card border rounded-md shadow-lg w-full max-w-md mx-4 p-6">
             <h3 className="text-lg font-semibold mb-4">Approve Return</h3>
             <div className="space-y-3">
               <label className="text-sm font-medium block">Return shipping paid by:</label>
@@ -327,7 +327,7 @@ export default function AdminReturnsPage() {
       {actionDialog?.type === "reject" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={() => setActionDialog(null)} />
-          <div role="dialog" aria-modal="true" className="relative bg-card border rounded-xl shadow-lg w-full max-w-md mx-4 p-6">
+          <div role="dialog" aria-modal="true" className="relative bg-card border rounded-md shadow-lg w-full max-w-md mx-4 p-6">
             <h3 className="text-lg font-semibold mb-4">Reject Return</h3>
             <textarea
               placeholder="Reason for rejection"

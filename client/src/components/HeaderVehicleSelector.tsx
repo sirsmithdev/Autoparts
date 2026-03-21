@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { ChevronDown, Car, Hash, X } from "lucide-react";
+import { ChevronDown, Warehouse, Hash, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useVehicleSelection, hasVehicleSelected, vehicleLabel } from "@/hooks/useVehicleSelection";
 
@@ -82,13 +82,16 @@ export function HeaderVehicleSelector() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors bg-white/10 hover:bg-white/15 text-gray-200 hover:text-white"
+        className="flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors border border-white/20 bg-white/5 hover:bg-white/10 text-gray-200 hover:text-white"
         title="Shop by vehicle"
       >
-        <Car className="h-4 w-4" />
-        <span className="hidden lg:inline max-w-[160px] truncate">
-          {hasVehicle ? label : "Select Vehicle"}
-        </span>
+        <Warehouse className="h-4 w-4 text-blue-400" />
+        <div className="hidden lg:flex flex-col items-start leading-tight">
+          <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">My Garage</span>
+          <span className="text-xs max-w-[140px] truncate">
+            {hasVehicle ? label : "Select Vehicle"}
+          </span>
+        </div>
         {hasVehicle ? (
           <X className="h-3.5 w-3.5 text-gray-400 hover:text-white" onClick={handleClearVehicle} />
         ) : (

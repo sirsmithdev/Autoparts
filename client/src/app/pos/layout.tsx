@@ -7,7 +7,7 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
       {/* Header */}
-      <header className="bg-[hsl(222,47%,11%)] text-white px-4 py-3 flex items-center justify-between shrink-0">
+      <header className="bg-[hsl(var(--header-bg))] text-white px-4 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded bg-primary flex items-center justify-center">
             <span className="text-xs font-bold text-white">316</span>

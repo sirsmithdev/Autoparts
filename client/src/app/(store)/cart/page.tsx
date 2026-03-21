@@ -266,15 +266,17 @@ function CartSkeleton() {
 
 function EmptyCart() {
   return (
-    <div className="text-center py-20 space-y-4">
-      <div className="mx-auto w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-        <ShoppingCart className="h-10 w-10 text-muted-foreground/40" />
-      </div>
-      <h1 className="text-2xl font-bold">Your cart is empty</h1>
-      <p className="text-muted-foreground max-w-sm mx-auto">Browse our catalog to find the parts you need for your vehicle.</p>
-      <Link href="/search" className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
-        <Truck className="h-4 w-4" />
-        Browse Parts
+    <div className="text-center py-24 space-y-5">
+      <ShoppingCart className="h-20 w-20 text-muted-foreground/25 mx-auto" />
+      <h1 className="text-2xl font-bold">Your cart is currently empty.</h1>
+      <p className="text-muted-foreground max-w-sm mx-auto">
+        Browse our catalog to find the parts you need for your vehicle.
+      </p>
+      <Link
+        href="/search"
+        className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-md font-semibold text-sm hover:bg-primary/90 transition-colors"
+      >
+        Return to shop
       </Link>
     </div>
   );

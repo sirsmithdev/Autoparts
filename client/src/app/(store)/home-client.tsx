@@ -8,7 +8,7 @@ export function HomeClient() {
   const { setVehicle } = useVehicleSelection();
 
   return (
-    <div className="max-w-3xl mx-auto px-4">
+    <div className="max-w-xl">
       <VehicleSelector
         variant="hero"
         onSelect={(make, model, year) => {

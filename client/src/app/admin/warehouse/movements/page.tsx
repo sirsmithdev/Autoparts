@@ -129,7 +129,7 @@ export default function StockMovementsPage() {
       </div>
 
       {/* Movements Table */}
-      <div className="border rounded-xl bg-card overflow-hidden">
+      <div className="border rounded-md bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

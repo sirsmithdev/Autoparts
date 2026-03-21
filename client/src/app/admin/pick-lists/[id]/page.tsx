@@ -175,7 +175,7 @@ export default function AdminPickListDetailPage() {
       </div>
 
       {/* Dates */}
-      <div className="border rounded-xl bg-card p-5">
+      <div className="border rounded-md bg-card p-5">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
             <span className="text-muted-foreground text-xs block mb-0.5">Created</span>
@@ -235,7 +235,7 @@ export default function AdminPickListDetailPage() {
       </div>
 
       {/* Items Table */}
-      <div className="border rounded-xl bg-card overflow-hidden">
+      <div className="border rounded-md bg-card overflow-hidden">
         <div className="px-5 py-3 bg-muted/40 border-b">
           <h2 className="font-semibold text-sm">Items ({pickList.items.length})</h2>
         </div>
@@ -307,7 +307,7 @@ export default function AdminPickListDetailPage() {
       {/* Assign Dialog */}
       {assignDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setAssignDialog(false)}>
-          <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Assign Pick List</h3>
             <div>
               <label className="text-sm text-muted-foreground block mb-1.5">Picker name or ID</label>
@@ -336,7 +336,7 @@ export default function AdminPickListDetailPage() {
       {/* Pick Item Dialog */}
       {pickDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setPickDialog(null)}>
-          <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Pick Item</h3>
             <div className="text-sm space-y-1">
               <p className="font-medium">{pickDialog.productName}</p>
@@ -377,7 +377,7 @@ export default function AdminPickListDetailPage() {
       {/* Cancel Dialog */}
       {cancelDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setCancelDialog(false)}>
-          <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Cancel Pick List</h3>
             <p className="text-sm text-muted-foreground">
               Are you sure you want to cancel this pick list? This cannot be undone.

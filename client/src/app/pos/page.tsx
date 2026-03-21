@@ -344,7 +344,7 @@ export default function PosTerminalPage() {
             </div>
             {/* Search results dropdown */}
             {showResults && debouncedQuery.length >= 2 && searchResults && searchResults.length > 0 && (
-              <div className="absolute left-4 right-4 top-full mt-1 z-20 bg-card border rounded-xl shadow-lg max-h-64 overflow-y-auto">
+              <div className="absolute left-4 right-4 top-full mt-1 z-20 bg-card border rounded-md shadow-lg max-h-64 overflow-y-auto">
                 {searchResults.map((product) => (
                   <button
                     key={product.id}
@@ -364,7 +364,7 @@ export default function PosTerminalPage() {
               </div>
             )}
             {showResults && debouncedQuery.length >= 2 && searchResults && searchResults.length === 0 && (
-              <div className="absolute left-4 right-4 top-full mt-1 z-20 bg-card border rounded-xl shadow-lg p-4 text-center text-sm text-muted-foreground">
+              <div className="absolute left-4 right-4 top-full mt-1 z-20 bg-card border rounded-md shadow-lg p-4 text-center text-sm text-muted-foreground">
                 No products found
               </div>
             )}
@@ -520,7 +520,7 @@ export default function PosTerminalPage() {
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setPaymentMethod("cash")}
-                  className={`flex flex-col items-center gap-1.5 p-3 border rounded-xl text-sm font-medium transition-colors ${
+                  className={`flex flex-col items-center gap-1.5 p-3 border rounded-md text-sm font-medium transition-colors ${
                     paymentMethod === "cash" ? "border-primary bg-primary/5 text-primary" : "hover:bg-accent"
                   }`}
                 >
@@ -529,7 +529,7 @@ export default function PosTerminalPage() {
                 </button>
                 <button
                   onClick={() => setPaymentMethod("card")}
-                  className={`flex flex-col items-center gap-1.5 p-3 border rounded-xl text-sm font-medium transition-colors ${
+                  className={`flex flex-col items-center gap-1.5 p-3 border rounded-md text-sm font-medium transition-colors ${
                     paymentMethod === "card" ? "border-primary bg-primary/5 text-primary" : "hover:bg-accent"
                   }`}
                 >
@@ -538,7 +538,7 @@ export default function PosTerminalPage() {
                 </button>
                 <button
                   onClick={() => setPaymentMethod("split")}
-                  className={`flex flex-col items-center gap-1.5 p-3 border rounded-xl text-sm font-medium transition-colors ${
+                  className={`flex flex-col items-center gap-1.5 p-3 border rounded-md text-sm font-medium transition-colors ${
                     paymentMethod === "split" ? "border-primary bg-primary/5 text-primary" : "hover:bg-accent"
                   }`}
                 >
@@ -627,7 +627,7 @@ export default function PosTerminalPage() {
             <button
               onClick={handleCompleteSale}
               disabled={!canComplete || saleMutation.isPending}
-              className="w-full py-3.5 bg-green-600 text-white rounded-xl text-base font-bold hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-green-600 text-white rounded-md text-base font-bold hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {saleMutation.isPending ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -643,7 +643,7 @@ export default function PosTerminalPage() {
       {/* Open Register Dialog */}
       {openRegisterDialog && !session && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-sm shadow-lg space-y-4">
+          <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4">
             <h3 className="text-lg font-bold">Open Register</h3>
             <p className="text-sm text-muted-foreground">Enter the opening cash amount to start a new POS session.</p>
             <div>
@@ -676,7 +676,7 @@ export default function PosTerminalPage() {
       {/* Close Register Dialog */}
       {closeRegisterDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setCloseRegisterDialog(false)}>
-          <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold">Close Register</h3>
             <p className="text-sm text-muted-foreground">Count the cash in the drawer and enter the closing amount.</p>
             {session && (
@@ -719,7 +719,7 @@ export default function PosTerminalPage() {
       {/* Held Carts Dialog */}
       {heldCartDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setHeldCartDialog(false)}>
-          <div role="dialog" aria-modal="true" className="bg-card border rounded-xl p-6 w-full max-w-md shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-md shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold">Held Carts</h3>
               <button onClick={() => setHeldCartDialog(false)} className="p-1 hover:bg-accent rounded transition-colors">

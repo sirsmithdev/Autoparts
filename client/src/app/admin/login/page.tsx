@@ -39,11 +39,11 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(222,47%,11%)] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[hsl(var(--header-bg))] flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         {/* Brand */}
         <div className="text-center space-y-3">
-          <div className="mx-auto w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center">
+          <div className="mx-auto w-16 h-16 rounded-md bg-white/10 flex items-center justify-center">
             <span className="text-white text-2xl font-bold">316</span>
           </div>
           <div>
@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        <div className="border border-white/10 rounded-xl bg-white/5 backdrop-blur-sm p-6 space-y-5">
+        <div className="border border-white/10 rounded-md bg-white/5 backdrop-blur-sm p-6 space-y-5">
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 text-red-300 rounded-lg text-sm">
               <Lock className="h-4 w-4 shrink-0" />

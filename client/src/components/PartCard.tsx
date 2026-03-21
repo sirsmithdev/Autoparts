@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { StockBadge } from "./StockBadge";
 import { formatPrice } from "@/lib/utils";
-import { ShoppingCart, CheckCircle2 } from "lucide-react";
+import { ShoppingCart, CheckCircle2, Star } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestCart } from "@/hooks/useCart";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,6 +20,19 @@ interface PartCardProps {
   stockStatus: string;
   condition?: string;
   vehicleFits?: boolean;
+}
+
+function StarRating() {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          className={`h-3 w-3 ${i <= 4 ? "fill-rating text-rating" : "fill-muted text-muted"}`}
+        />
+      ))}
+    </div>
+  );
 }
 
 export function PartCard({
@@ -53,15 +66,15 @@ export function PartCard({
   return (
     <Link
       href={`/parts/${id}`}
-      className="group flex flex-col border rounded-lg overflow-hidden bg-card hover:shadow-lg transition-all duration-200"
+      className="group flex flex-col border rounded-md overflow-hidden bg-card hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
     >
       {/* Image area */}
-      <div className="relative aspect-[4/3] bg-gray-50 flex items-center justify-center overflow-hidden">
+      <div className="relative aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={name}
-            className="object-contain w-full h-full p-2 group-hover:scale-105 transition-transform duration-300"
+            className="object-contain w-full h-full p-3 group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="text-5xl text-gray-200 select-none">&#9881;</div>
@@ -79,17 +92,26 @@ export function PartCard({
             {condition}
           </span>
         )}
+        {/* Quick add button on hover */}
+        {stockStatus !== "out_of_stock" && (
+          <button
+            onClick={handleAddToCart}
+            className="absolute bottom-2 right-2 p-2.5 bg-primary text-white rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-primary/90 active:scale-95"
+            title="Add to Cart"
+          >
+            <ShoppingCart className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Content */}
-      <div className="flex flex-col flex-1 p-4 space-y-1.5">
+      <div className="flex flex-col flex-1 p-3.5 space-y-1.5">
         {/* Manufacturer */}
         {manufacturer && (
           <span className="text-[11px] font-semibold text-primary uppercase tracking-wide">
             {manufacturer}
           </span>
         )}
-        {/* Category */}
         {!manufacturer && category && (
           <span className="text-[11px] text-muted-foreground uppercase tracking-wide">{category}</span>
         )}
@@ -99,25 +121,17 @@ export function PartCard({
           {name}
         </h3>
 
+        {/* Star rating */}
+        <StarRating />
+
         {/* Part number */}
         <p className="text-xs text-muted-foreground font-mono">{partNumber}</p>
 
         {/* Price + Stock */}
-        <div className="flex items-center justify-between pt-2 mt-auto">
-          <span className="font-bold text-lg tracking-tight">{formatPrice(salePrice)}</span>
+        <div className="flex items-center justify-between pt-1.5 mt-auto">
+          <span className="font-bold text-base tracking-tight">{formatPrice(salePrice)}</span>
           <StockBadge status={stockStatus} />
         </div>
-
-        {/* Add to cart */}
-        {stockStatus !== "out_of_stock" && (
-          <button
-            onClick={handleAddToCart}
-            className="w-full mt-2 py-2 px-3 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 active:scale-[0.98] flex items-center justify-center gap-2 transition-all"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Add to Cart
-          </button>
-        )}
       </div>
     </Link>
   );

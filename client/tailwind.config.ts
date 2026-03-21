@@ -46,6 +46,16 @@ const config: Config = {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        topbar: {
+          DEFAULT: "hsl(var(--topbar-bg))",
+          foreground: "hsl(var(--topbar-foreground))",
+        },
+        newsletter: {
+          DEFAULT: "hsl(var(--newsletter-bg))",
+        },
+        rating: {
+          DEFAULT: "hsl(var(--rating))",
+        },
       },
       ringOffsetColor: {
         background: "hsl(var(--background))",
