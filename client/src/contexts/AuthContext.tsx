@@ -11,11 +11,20 @@ export interface User {
   role: string;
 }
 
+interface RegisterData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+}
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => void;
 }
 
@@ -57,6 +66,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   }, []);
 
+  const register = useCallback(async (data: RegisterData) => {
+    const result = await api<{ user: User; accessToken: string; refreshToken: string }>(
+      "/api/store/auth/register",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+    setTokens(result.accessToken, result.refreshToken);
+    setUser(result.user);
+  }, []);
+
   const logout = useCallback(() => {
     clearTokens();
     setUser(null);
@@ -67,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: !!user,
     isLoading,
     login,
+    register,
     logout,
   };
 
