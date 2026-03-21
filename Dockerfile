@@ -42,9 +42,9 @@ RUN npm install --omit=dev --ignore-scripts && \
 # Copy built server from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy migration files and runner script
+# Copy migration files (including meta/) and runner script
 COPY --from=builder /app/migrations ./migrations
-COPY --from=builder /app/scripts/run-migrations.js ./scripts/run-migrations.js
+COPY --from=builder /app/scripts ./scripts
 
 # Copy built Next.js app from builder
 COPY --from=builder /app/client/.next ./client/.next
