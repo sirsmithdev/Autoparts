@@ -5,9 +5,6 @@
  * can decide whether to retry or mark as failed.
  */
 
-const GARAGE_SYNC_URL = process.env.GARAGE_SYNC_URL; // e.g. "https://316-automotive.com/api/sync"
-const GARAGE_SYNC_API_KEY = process.env.GARAGE_SYNC_API_KEY;
-
 interface SyncResult {
   success: boolean;
   error?: string;
@@ -45,20 +42,23 @@ async function postToGarage(
   payload: object,
 ): Promise<SyncResult> {
   try {
-    if (!GARAGE_SYNC_URL) {
+    const syncUrl = process.env.GARAGE_SYNC_URL;
+    const syncApiKey = process.env.GARAGE_SYNC_API_KEY;
+
+    if (!syncUrl) {
       return { success: false, error: "GARAGE_SYNC_URL not configured" };
     }
 
-    if (!GARAGE_SYNC_API_KEY) {
+    if (!syncApiKey) {
       return { success: false, error: "GARAGE_SYNC_API_KEY not configured" };
     }
 
-    const url = `${GARAGE_SYNC_URL}${endpoint}`;
+    const url = `${syncUrl}${endpoint}`;
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-sync-api-key": GARAGE_SYNC_API_KEY,
+        "x-sync-api-key": syncApiKey,
       },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(10_000),
