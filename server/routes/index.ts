@@ -11,6 +11,7 @@ import ordersRoutes from "./orders.routes.js";
 import adminRoutes from "./admin.routes.js";
 import returnsRoutes from "./returns.routes.js";
 import warehouseRoutes from "./warehouse.routes.js";
+import posRoutes from "./pos.routes.js";
 
 export function registerRoutes(app: Express): void {
   app.use(authRoutes);
@@ -22,4 +23,5 @@ export function registerRoutes(app: Express): void {
   app.use(adminRoutes);
   app.use(returnsRoutes);
   app.use(warehouseRoutes);
+  app.use(posRoutes);
 }
