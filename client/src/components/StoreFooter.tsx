@@ -51,6 +51,11 @@ export function StoreFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/policies/returns" className="hover:text-white transition-colors">
+                  Return Policy
+                </Link>
+              </li>
+              <li>
                 <a
                   href="https://316-automotive.com"
                   target="_blank"
