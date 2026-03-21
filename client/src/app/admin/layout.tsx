@@ -5,13 +5,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import {
   Package, RotateCcw, Settings, LogOut, ShoppingBag,
-  ChevronLeft, LayoutDashboard, User, Warehouse,
+  ChevronLeft, LayoutDashboard, User, Warehouse, ClipboardList,
 } from "lucide-react";
 
 const STAFF_ROLES = ["admin", "manager", "receptionist"];
 
 const adminNav = [
   { label: "Orders", href: "/admin/orders", icon: Package },
+  { label: "Pick Lists", href: "/admin/pick-lists", icon: ClipboardList },
   { label: "Returns", href: "/admin/returns", icon: RotateCcw },
   { label: "Warehouse", href: "/admin/warehouse", icon: Warehouse },
   { label: "Settings", href: "/admin/settings", icon: Settings },
