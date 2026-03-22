@@ -97,21 +97,9 @@ export default function CheckoutPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Cart", href: "/cart" }, { label: "Checkout" }]} />
 
-      {/* Step Indicator */}
-      <div className="flex items-center justify-center gap-0">
-        {CHECKOUT_STEPS.map((step, i) => (
-          <div key={step.num} className="flex items-center">
-            <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                i === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-              }`}>
-                {step.num}
-              </div>
-              <span className={`text-sm font-medium ${i === 0 ? "text-foreground" : "text-muted-foreground"}`}>{step.label}</span>
-            </div>
-            {i < CHECKOUT_STEPS.length - 1 && <ChevronRight className="h-4 w-4 text-muted-foreground/40 mx-4" />}
-          </div>
-        ))}
+      {/* Coupon toggle */}
+      <div className="border rounded-md p-3 text-sm text-muted-foreground">
+        Have a coupon? <button className="text-primary hover:underline font-medium">Click here to enter your code</button>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -217,11 +205,22 @@ export default function CheckoutPage() {
 
       {/* Right column - Order Summary */}
       <div>
-      <section className="border rounded-xl bg-card p-6 space-y-3 sticky top-24">
+      <section className="border rounded-md bg-card p-6 space-y-3 sticky top-24">
         <h2 className="text-lg font-bold">Your order</h2>
+
+        {/* Itemized list */}
+        <div className="space-y-2 text-sm border-b pb-3">
+          {items.map((item, i) => (
+            <div key={i} className="flex justify-between gap-2">
+              <span className="text-muted-foreground truncate">{item.part?.name || `Item ${i + 1}`} &times; {item.quantity}</span>
+              <span className="font-medium shrink-0">{formatPrice(parseFloat(item.currentPrice) * item.quantity)}</span>
+            </div>
+          ))}
+        </div>
+
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Subtotal ({items.length} item{items.length !== 1 ? "s" : ""})</span>
+            <span className="text-muted-foreground">Subtotal</span>
             <span className="font-medium">{formatPrice(subtotal)}</span>
           </div>
           <div className="flex justify-between">

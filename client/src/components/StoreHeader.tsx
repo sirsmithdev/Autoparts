@@ -167,15 +167,18 @@ export function StoreHeader() {
               )}
 
               {/* Wishlist placeholder */}
-              <button className="p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10 hidden sm:flex">
+              <button className="relative p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10 hidden sm:flex">
                 <Heart className="h-5 w-5" />
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center ring-2 ring-[hsl(var(--header-bg))]">
+                  0
+                </span>
               </button>
 
               {/* Cart */}
               <Link href="/cart" className="relative p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10">
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center ring-2 ring-[hsl(var(--header-bg))]">
+                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center ring-2 ring-[hsl(var(--header-bg))]">
                     {cartCount > 99 ? "99+" : cartCount}
                   </span>
                 )}

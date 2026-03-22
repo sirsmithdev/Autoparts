@@ -45,36 +45,35 @@ export function CategorySidebar({ categories, className = "" }: CategorySidebarP
         <h3 className="font-bold text-sm mb-3 pb-2 border-b border-border text-foreground uppercase tracking-wider">
           Product Categories
         </h3>
-        <ul className="space-y-0.5">
+        <ul className="space-y-1">
           <li>
             <Link
               href={allPartsHref}
               className={cn(
-                "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
+                "flex items-center gap-2.5 px-1 py-1.5 text-sm transition-colors",
                 !currentCategory
-                  ? "bg-primary/10 text-primary font-medium border-l-2 border-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  ? "text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Package className="h-4 w-4 shrink-0" />
+              <input type="checkbox" checked={!currentCategory} readOnly className="rounded border-gray-300 text-primary" />
               All Parts
             </Link>
           </li>
           {categories.map((cat) => {
-            const Icon = categoryIcons[cat] || Package;
             const isActive = currentCategory === cat;
             return (
               <li key={cat}>
                 <Link
                   href={`/search?${new URLSearchParams({ ...Object.fromEntries(searchParams), category: cat, page: "1" })}`}
                   className={cn(
-                    "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
+                    "flex items-center gap-2.5 px-1 py-1.5 text-sm transition-colors",
                     isActive
-                      ? "bg-primary/10 text-primary font-medium border-l-2 border-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                      ? "text-primary font-medium"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <input type="checkbox" checked={isActive} readOnly className="rounded border-gray-300 text-primary" />
                   {cat}
                 </Link>
               </li>

@@ -115,6 +115,12 @@ function LoginForm() {
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Signing in...</> : "Log in"}
             </button>
           </form>
+
+          <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+            By continuing with Google or email, you agree to 316 Automotive&apos;s{" "}
+            <Link href="#" className="text-primary hover:underline">Terms of Service</Link> and{" "}
+            <Link href="#" className="text-primary hover:underline">Privacy Policy</Link>.
+          </p>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
