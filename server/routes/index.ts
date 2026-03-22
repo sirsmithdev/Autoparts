@@ -13,6 +13,7 @@ import returnsRoutes from "./returns.routes.js";
 import warehouseRoutes from "./warehouse.routes.js";
 import posRoutes from "./pos.routes.js";
 import paymentMethodsRoutes from "./paymentMethods.routes.js";
+import staffRoutes from "./staff.routes.js";
 
 export function registerRoutes(app: Express): void {
   app.use(authRoutes);
@@ -26,4 +27,5 @@ export function registerRoutes(app: Express): void {
   app.use(warehouseRoutes);
   app.use(posRoutes);
   app.use(paymentMethodsRoutes);
+  app.use(staffRoutes);
 }

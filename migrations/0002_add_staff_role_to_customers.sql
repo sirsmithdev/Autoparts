@@ -1,0 +1,1 @@
+ALTER TABLE `customers` ADD `role` enum('admin','manager','warehouse_staff','cashier');

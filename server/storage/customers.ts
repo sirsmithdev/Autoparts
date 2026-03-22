@@ -2,7 +2,7 @@
  * Customer storage module — registration, authentication, profile, refresh tokens.
  */
 
-import { eq } from "drizzle-orm";
+import { eq, isNotNull, like } from "drizzle-orm";
 import { db } from "../db.js";
 import { customers, refreshTokens } from "../schema.js";
 import bcrypt from "bcrypt";
@@ -269,4 +269,42 @@ export async function revokeAllRefreshTokens(customerId: string): Promise<void> 
   await db
     .delete(refreshTokens)
     .where(eq(refreshTokens.customerId, customerId));
+}
+
+// ─── Staff Role Management ────────────────────────────────
+
+/** Set a customer's staff role. */
+export async function setRole(
+  customerId: string,
+  role: string,
+): Promise<void> {
+  await db
+    .update(customers)
+    .set({ role: role as typeof customers.role.enumValues[number], updatedAt: new Date() })
+    .where(eq(customers.id, customerId));
+}
+
+/** Remove a customer's staff role (demote to regular customer). */
+export async function removeRole(customerId: string): Promise<void> {
+  await db
+    .update(customers)
+    .set({ role: null, updatedAt: new Date() })
+    .where(eq(customers.id, customerId));
+}
+
+/** List all customers with a staff role. */
+export async function findStaff(): Promise<Customer[]> {
+  return db
+    .select()
+    .from(customers)
+    .where(isNotNull(customers.role));
+}
+
+/** Search customers by email prefix (for staff management). */
+export async function searchByEmail(query: string): Promise<Customer[]> {
+  return db
+    .select()
+    .from(customers)
+    .where(like(customers.email, `${query}%`))
+    .limit(20);
 }

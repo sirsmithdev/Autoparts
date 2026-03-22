@@ -1,10 +1,11 @@
 /**
- * Parts-store Express middleware for customer JWT auth, admin checks,
+ * Parts-store Express middleware for customer JWT auth, role-based permissions,
  * and sync API key validation.
  */
 
 import type { Request, Response, NextFunction } from "express";
 import { verifyToken } from "./auth.js";
+import { hasPermission, type Permission } from "./permissions.js";
 
 // Extend Express Request to include customer info from JWT
 declare global {
@@ -14,6 +15,7 @@ declare global {
         customerId: string;
         email: string;
         isAdmin: boolean;
+        role: string | null;
       };
     }
   }
@@ -21,7 +23,7 @@ declare global {
 
 /**
  * Extracts JWT from "Authorization: Bearer <token>" header,
- * verifies it, and attaches { customerId, email, isAdmin } to req.customer.
+ * verifies it, and attaches { customerId, email, isAdmin, role } to req.customer.
  * Returns 401 if token is missing, invalid, or expired.
  */
 export function authenticateToken(
@@ -41,6 +43,7 @@ export function authenticateToken(
       customerId: payload.customerId,
       email: payload.email,
       isAdmin: payload.isAdmin,
+      role: payload.role ?? null,
     };
     next();
   } catch {
@@ -66,6 +69,7 @@ export function optionalAuth(
         customerId: payload.customerId,
         email: payload.email,
         isAdmin: payload.isAdmin,
+        role: payload.role ?? null,
       };
     }
   } catch {
@@ -77,6 +81,7 @@ export function optionalAuth(
 /**
  * Requires req.customer.isAdmin to be true. Must be used after authenticateToken.
  * Returns 403 if the current customer is not an admin.
+ * @deprecated Use requirePermission() for granular checks. Kept for backward compatibility.
  */
 export function requireAdmin(
   req: Request,
@@ -88,6 +93,39 @@ export function requireAdmin(
     return;
   }
   next();
+}
+
+/**
+ * Requires the customer to have any staff role (non-null role).
+ * Must be used after authenticateToken.
+ */
+export function requireStaff(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (!req.customer?.role) {
+    res.status(403).json({ message: "Staff access required" });
+    return;
+  }
+  next();
+}
+
+/**
+ * Factory that creates middleware requiring the customer to have specific permission(s).
+ * Must be used after authenticateToken.
+ * If multiple permissions are given, the customer must have at least one (OR logic).
+ */
+export function requirePermission(...permissions: Permission[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const role = req.customer?.role ?? null;
+    const hasAny = permissions.some((p) => hasPermission(role, p));
+    if (!hasAny) {
+      res.status(403).json({ message: "Insufficient permissions" });
+      return;
+    }
+    next();
+  };
 }
 
 /**

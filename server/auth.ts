@@ -1,5 +1,5 @@
 /**
- * Parts-store authentication — customer-based JWT tokens.
+ * Parts-store authentication — customer-based JWT tokens with role support.
  * No database access here; just token creation, verification, and admin checks.
  */
 
@@ -12,6 +12,7 @@ export interface TokenPayload {
   customerId: string;
   email: string;
   isAdmin: boolean;
+  role: string | null;
   type: "access" | "refresh" | "email_verify";
 }
 
@@ -28,11 +29,13 @@ export function generateAccessToken(customer: {
   id: string;
   email: string;
   isAdmin: boolean;
+  role: string | null;
 }): string {
   const payload: TokenPayload = {
     customerId: customer.id,
     email: customer.email,
     isAdmin: customer.isAdmin,
+    role: customer.role,
     type: "access",
   };
   return jwt.sign(payload, getJwtSecret(), { expiresIn: ACCESS_EXPIRY });
@@ -43,11 +46,13 @@ export function generateRefreshToken(customer: {
   id: string;
   email: string;
   isAdmin: boolean;
+  role: string | null;
 }): string {
   const payload: TokenPayload = {
     customerId: customer.id,
     email: customer.email,
     isAdmin: customer.isAdmin,
+    role: customer.role,
     type: "refresh",
   };
   return jwt.sign(payload, getJwtSecret(), { expiresIn: REFRESH_EXPIRY });
@@ -55,7 +60,10 @@ export function generateRefreshToken(customer: {
 
 /** Decodes and verifies a token. Throws on invalid or expired tokens. */
 export function verifyToken(token: string): TokenPayload {
-  return jwt.verify(token, getJwtSecret()) as TokenPayload;
+  const payload = jwt.verify(token, getJwtSecret()) as TokenPayload;
+  // Handle old tokens that don't have the role field
+  if (payload.role === undefined) payload.role = null;
+  return payload;
 }
 
 /** Creates a 24-hour email verification token. */
@@ -67,6 +75,7 @@ export function generateEmailVerifyToken(customer: {
     customerId: customer.id,
     email: customer.email,
     isAdmin: false,
+    role: null,
     type: "email_verify",
   };
   return jwt.sign(payload, getJwtSecret(), { expiresIn: "24h" });

@@ -53,6 +53,7 @@ export const paymentStatusValues = ["pending", "paid", "refunded", "voided"] as 
 export const syncDirectionValues = ["inbound", "outbound"] as const;
 export const syncStatusValues = ["success", "failed", "queued"] as const;
 export const syncQueueStatusValues = ["pending", "processing", "completed", "failed"] as const;
+export const staffRoleValues = ["admin", "manager", "warehouse_staff", "cashier"] as const;
 
 // ==================== Core Tables (6) ====================
 
@@ -70,6 +71,7 @@ export const customers = mysqlTable("customers", {
   garageUserId: varchar("garage_user_id", { length: 36 }).unique(),
   profileImageUrl: text("profile_image_url"),
   emailVerified: boolean("email_verified").notNull().default(false),
+  role: mysqlEnum("role", staffRoleValues),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

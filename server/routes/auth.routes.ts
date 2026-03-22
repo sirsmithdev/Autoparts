@@ -58,22 +58,32 @@ const setPasswordSchema = z.object({
 /** Strip the password hash before sending a customer to the client. */
 function toCustomerResponse(customer: Customer) {
   const { password, ...rest } = customer;
-  return rest;
+  return { ...rest, role: customer.role ?? null };
 }
 
 /** Build the token pair and persist the refresh token in the DB. */
 async function issueTokens(customer: Customer) {
-  const isAdmin = isAdminEmail(customer.email);
+  let role = customer.role ?? null;
+
+  // Auto-promote: if email is in STORE_ADMIN_EMAILS and no role set, promote to admin
+  if (!role && isAdminEmail(customer.email)) {
+    role = "admin";
+    await customerStore.setRole(customer.id, "admin");
+  }
+
+  const isAdmin = role === "admin" || isAdminEmail(customer.email);
 
   const accessToken = generateAccessToken({
     id: customer.id,
     email: customer.email,
     isAdmin,
+    role,
   });
   const refreshToken = generateRefreshToken({
     id: customer.id,
     email: customer.email,
     isAdmin,
+    role,
   });
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -332,7 +342,10 @@ router.post("/api/store/auth/refresh", async (req, res) => {
 
     const tokens = await issueTokens(customer);
 
-    res.json(tokens);
+    res.json({
+      ...tokens,
+      customer: toCustomerResponse(customer),
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: error.errors[0].message });

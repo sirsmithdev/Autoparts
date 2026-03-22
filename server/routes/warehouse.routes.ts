@@ -3,7 +3,7 @@
  * All endpoints require admin authentication.
  */
 import { Router } from "express";
-import { authenticateToken, requireAdmin } from "../middleware.js";
+import { authenticateToken, requirePermission } from "../middleware.js";
 import * as warehouse from "../storage/warehouse.js";
 import * as pickListStorage from "../storage/pickLists.js";
 
@@ -14,7 +14,7 @@ const router = Router();
 router.get(
   "/api/store/admin/warehouse/locations",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (_req, res) => {
     try {
       const locations = await warehouse.getLocations();
@@ -28,7 +28,7 @@ router.get(
 router.post(
   "/api/store/admin/warehouse/locations",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const location = await warehouse.createLocation(req.body);
@@ -42,7 +42,7 @@ router.post(
 router.patch(
   "/api/store/admin/warehouse/locations/:id",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await warehouse.updateLocation(String(req.params.id), req.body);
@@ -58,7 +58,7 @@ router.patch(
 router.get(
   "/api/store/admin/warehouse/bins",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const locationId = req.query.locationId
@@ -75,7 +75,7 @@ router.get(
 router.post(
   "/api/store/admin/warehouse/bins",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const bin = await warehouse.createBin(req.body);
@@ -89,7 +89,7 @@ router.post(
 router.patch(
   "/api/store/admin/warehouse/bins/:id",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await warehouse.updateBin(String(req.params.id), req.body);
@@ -103,7 +103,7 @@ router.patch(
 router.get(
   "/api/store/admin/warehouse/bins/:id/contents",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const contents = await warehouse.getBinContents(String(req.params.id));
@@ -119,7 +119,7 @@ router.get(
 router.post(
   "/api/store/admin/warehouse/assign",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await warehouse.assignProductToBin(
@@ -139,7 +139,7 @@ router.post(
 router.post(
   "/api/store/admin/warehouse/transfer",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await warehouse.transferStock(
@@ -160,7 +160,7 @@ router.post(
 router.post(
   "/api/store/admin/warehouse/adjust",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await warehouse.adjustStock(
@@ -181,7 +181,7 @@ router.post(
 router.get(
   "/api/store/admin/warehouse/product/:id/bins",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const locations = await warehouse.getProductBinLocations(String(req.params.id));
@@ -197,7 +197,7 @@ router.get(
 router.get(
   "/api/store/admin/warehouse/receipts",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const result = await warehouse.getStockReceipts({
@@ -215,7 +215,7 @@ router.get(
 router.post(
   "/api/store/admin/warehouse/receipts",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const receipt = await warehouse.createStockReceipt(
@@ -232,7 +232,7 @@ router.post(
 router.get(
   "/api/store/admin/warehouse/receipts/:id",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const receipt = await warehouse.getStockReceipt(String(req.params.id));
@@ -250,7 +250,7 @@ router.get(
 router.post(
   "/api/store/admin/warehouse/receipts/:id/receive",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await warehouse.confirmStockReceipt(
@@ -268,7 +268,7 @@ router.post(
 router.post(
   "/api/store/admin/warehouse/receipts/:id/cancel",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await warehouse.cancelStockReceipt(String(req.params.id));
@@ -285,7 +285,7 @@ router.post(
 router.get(
   "/api/store/admin/warehouse/movements",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const result = await warehouse.getStockMovementHistory({
@@ -306,7 +306,7 @@ router.get(
 router.get(
   "/api/store/admin/pick-lists",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const result = await pickListStorage.getPickLists({
@@ -324,7 +324,7 @@ router.get(
 router.get(
   "/api/store/admin/pick-lists/:id",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       const pickList = await pickListStorage.getPickList(String(req.params.id));
@@ -342,7 +342,7 @@ router.get(
 router.post(
   "/api/store/admin/pick-lists/:id/assign",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await pickListStorage.assignPickList(String(req.params.id), req.body.assignedTo);
@@ -357,7 +357,7 @@ router.post(
 router.post(
   "/api/store/admin/pick-lists/:id/start",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await pickListStorage.startPickList(String(req.params.id));
@@ -372,7 +372,7 @@ router.post(
 router.post(
   "/api/store/admin/pick-lists/:id/items/:itemId/pick",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await pickListStorage.pickItem(String(req.params.itemId), req.body.quantityPicked);
@@ -387,7 +387,7 @@ router.post(
 router.post(
   "/api/store/admin/pick-lists/:id/complete",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await pickListStorage.completePickList(String(req.params.id));
@@ -402,7 +402,7 @@ router.post(
 router.post(
   "/api/store/admin/pick-lists/:id/cancel",
   authenticateToken,
-  requireAdmin,
+  requirePermission("warehouse:manage"),
   async (req, res) => {
     try {
       await pickListStorage.cancelPickList(String(req.params.id));

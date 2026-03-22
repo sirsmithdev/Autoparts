@@ -4,7 +4,7 @@
  * All endpoints require admin authentication.
  */
 import { Router } from "express";
-import { authenticateToken, requireAdmin } from "../middleware.js";
+import { authenticateToken, requirePermission } from "../middleware.js";
 import * as pos from "../storage/pos.js";
 import { db } from "../db.js";
 import { posTransactions } from "../schema.js";
@@ -17,7 +17,7 @@ const router = Router();
 router.post(
   "/api/store/pos/sessions/open",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const session = await pos.openSession(
@@ -36,7 +36,7 @@ router.post(
 router.post(
   "/api/store/pos/sessions/close",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const session = await pos.closeSession(
@@ -57,7 +57,7 @@ router.post(
 router.get(
   "/api/store/pos/sessions/current",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (_req, res) => {
     try {
       const session = await pos.getCurrentSession();
@@ -73,7 +73,7 @@ router.get(
 router.post(
   "/api/store/pos/transactions",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const transaction = await pos.createSale({
@@ -96,7 +96,7 @@ router.post(
 router.get(
   "/api/store/pos/transactions",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const sessionId = req.query.sessionId as string | undefined;
@@ -130,7 +130,7 @@ router.get(
 router.get(
   "/api/store/pos/transactions/:id",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const transaction = await pos.getTransaction(String(req.params.id));
@@ -147,7 +147,7 @@ router.get(
 router.post(
   "/api/store/pos/transactions/:id/void",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       await pos.voidTransaction(
@@ -167,7 +167,7 @@ router.post(
 router.post(
   "/api/store/pos/transactions/:id/refund",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const refund = await pos.refundTransaction(
@@ -189,7 +189,7 @@ router.post(
 router.post(
   "/api/store/pos/hold",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const cart = await pos.holdCart(
@@ -207,7 +207,7 @@ router.post(
 router.get(
   "/api/store/pos/hold",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (_req, res) => {
     try {
       const carts = await pos.getHeldCarts();
@@ -221,7 +221,7 @@ router.get(
 router.get(
   "/api/store/pos/hold/:id",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const cart = await pos.getHeldCart(String(req.params.id));
@@ -238,7 +238,7 @@ router.get(
 router.delete(
   "/api/store/pos/hold/:id",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       await pos.deleteHeldCart(String(req.params.id));
@@ -254,7 +254,7 @@ router.delete(
 router.get(
   "/api/store/pos/lookup",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const q = (req.query.q as string) || "";
@@ -269,7 +269,7 @@ router.get(
 router.get(
   "/api/store/pos/reports/daily",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const date = req.query.date as string | undefined;
@@ -284,7 +284,7 @@ router.get(
 router.get(
   "/api/store/pos/reports/session/:id",
   authenticateToken,
-  requireAdmin,
+  requirePermission("pos:operate"),
   async (req, res) => {
     try {
       const report = await pos.getSessionReport(String(req.params.id));

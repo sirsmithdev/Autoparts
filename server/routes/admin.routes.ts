@@ -3,7 +3,7 @@
  * Handles order fulfillment, returns management, delivery zones, store settings, sync status.
  */
 import { Router } from "express";
-import { authenticateToken, requireAdmin } from "../middleware.js";
+import { authenticateToken, requirePermission } from "../middleware.js";
 import * as orders from "../storage/orders.js";
 import * as returns from "../storage/returns.js";
 import * as settings from "../storage/settings.js";
@@ -13,7 +13,7 @@ const router = Router();
 
 // ==================== Order Management ====================
 
-router.get("/api/store/admin/orders", authenticateToken, requireAdmin, async (req, res) => {
+router.get("/api/store/admin/orders", authenticateToken, requirePermission("orders:read"), async (req, res) => {
   try {
     const { status, customerId, search, page, limit } = req.query;
     const result = await orders.getAllOrders({
@@ -29,7 +29,7 @@ router.get("/api/store/admin/orders", authenticateToken, requireAdmin, async (re
   }
 });
 
-router.get("/api/store/admin/orders/:id", authenticateToken, requireAdmin, async (req, res) => {
+router.get("/api/store/admin/orders/:id", authenticateToken, requirePermission("orders:read"), async (req, res) => {
   try {
     const order = await orders.getOrder(String(req.params.id));
     if (!order) return res.status(404).json({ message: "Order not found" });
@@ -39,7 +39,7 @@ router.get("/api/store/admin/orders/:id", authenticateToken, requireAdmin, async
   }
 });
 
-router.post("/api/store/admin/orders/:id/confirm", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/orders/:id/confirm", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
     await orders.confirmOrder(String(req.params.id));
     const order = await orders.getOrder(String(req.params.id));
@@ -51,7 +51,7 @@ router.post("/api/store/admin/orders/:id/confirm", authenticateToken, requireAdm
 });
 
 // Start picking — confirmed → picking
-router.post("/api/store/admin/orders/:id/start-picking", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/orders/:id/start-picking", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
     await orders.markOrderPicking(String(req.params.id));
     const order = await orders.getOrder(String(req.params.id));
@@ -62,7 +62,7 @@ router.post("/api/store/admin/orders/:id/start-picking", authenticateToken, requ
   }
 });
 
-router.post("/api/store/admin/orders/:id/pack", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/orders/:id/pack", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
     await orders.markOrderPacked(String(req.params.id), req.customer!.customerId);
     const order = await orders.getOrder(String(req.params.id));
@@ -73,7 +73,7 @@ router.post("/api/store/admin/orders/:id/pack", authenticateToken, requireAdmin,
   }
 });
 
-router.post("/api/store/admin/orders/:id/ship", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/orders/:id/ship", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
     const { trackingNumber } = req.body;
     await orders.markOrderShipped(String(req.params.id), trackingNumber || "");
@@ -85,7 +85,7 @@ router.post("/api/store/admin/orders/:id/ship", authenticateToken, requireAdmin,
   }
 });
 
-router.post("/api/store/admin/orders/:id/out-for-delivery", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/orders/:id/out-for-delivery", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
     await orders.markOrderOutForDelivery(String(req.params.id));
     const order = await orders.getOrder(String(req.params.id));
@@ -96,7 +96,7 @@ router.post("/api/store/admin/orders/:id/out-for-delivery", authenticateToken, r
   }
 });
 
-router.post("/api/store/admin/orders/:id/deliver", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/orders/:id/deliver", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
     await orders.markOrderDelivered(String(req.params.id));
     const order = await orders.getOrder(String(req.params.id));
@@ -107,7 +107,7 @@ router.post("/api/store/admin/orders/:id/deliver", authenticateToken, requireAdm
   }
 });
 
-router.post("/api/store/admin/orders/:id/ready-for-pickup", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/orders/:id/ready-for-pickup", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
     await orders.markOrderReadyForPickup(String(req.params.id));
     const order = await orders.getOrder(String(req.params.id));
@@ -118,7 +118,7 @@ router.post("/api/store/admin/orders/:id/ready-for-pickup", authenticateToken, r
   }
 });
 
-router.post("/api/store/admin/orders/:id/picked-up", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/orders/:id/picked-up", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
     const { pickedUpBy } = req.body;
     if (!pickedUpBy) return res.status(400).json({ message: "pickedUpBy is required" });
@@ -131,7 +131,7 @@ router.post("/api/store/admin/orders/:id/picked-up", authenticateToken, requireA
   }
 });
 
-router.post("/api/store/admin/orders/:id/cancel", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/orders/:id/cancel", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
     const { reason } = req.body;
     if (!reason) return res.status(400).json({ message: "reason is required" });
@@ -144,7 +144,7 @@ router.post("/api/store/admin/orders/:id/cancel", authenticateToken, requireAdmi
   }
 });
 
-router.patch("/api/store/admin/orders/:id/notes", authenticateToken, requireAdmin, async (req, res) => {
+router.patch("/api/store/admin/orders/:id/notes", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
     await orders.updateOrderNotes(String(req.params.id), req.body.staffNotes || "");
     const order = await orders.getOrder(String(req.params.id));
@@ -156,7 +156,7 @@ router.patch("/api/store/admin/orders/:id/notes", authenticateToken, requireAdmi
 
 // ==================== Returns Management ====================
 
-router.get("/api/store/admin/returns", authenticateToken, requireAdmin, async (req, res) => {
+router.get("/api/store/admin/returns", authenticateToken, requirePermission("returns:read"), async (req, res) => {
   try {
     const { status, search, page, limit } = req.query;
     const result = await returns.getAllReturns({
@@ -171,7 +171,7 @@ router.get("/api/store/admin/returns", authenticateToken, requireAdmin, async (r
   }
 });
 
-router.get("/api/store/admin/returns/:id", authenticateToken, requireAdmin, async (req, res) => {
+router.get("/api/store/admin/returns/:id", authenticateToken, requirePermission("returns:read"), async (req, res) => {
   try {
     const ret = await returns.getReturn(String(req.params.id));
     if (!ret) return res.status(404).json({ message: "Return not found" });
@@ -181,7 +181,7 @@ router.get("/api/store/admin/returns/:id", authenticateToken, requireAdmin, asyn
   }
 });
 
-router.post("/api/store/admin/returns/:id/approve", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/returns/:id/approve", authenticateToken, requirePermission("returns:manage"), async (req, res) => {
   try {
     await returns.approveReturn(String(req.params.id), req.customer!.customerId);
     const ret = await returns.getReturn(String(req.params.id));
@@ -192,7 +192,7 @@ router.post("/api/store/admin/returns/:id/approve", authenticateToken, requireAd
   }
 });
 
-router.post("/api/store/admin/returns/:id/reject", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/returns/:id/reject", authenticateToken, requirePermission("returns:manage"), async (req, res) => {
   try {
     const { reason } = req.body;
     if (!reason) return res.status(400).json({ message: "reason is required" });
@@ -205,7 +205,7 @@ router.post("/api/store/admin/returns/:id/reject", authenticateToken, requireAdm
   }
 });
 
-router.post("/api/store/admin/returns/:id/receive", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/returns/:id/receive", authenticateToken, requirePermission("returns:manage"), async (req, res) => {
   try {
     const { itemConditions } = req.body;
     if (!Array.isArray(itemConditions)) {
@@ -220,7 +220,7 @@ router.post("/api/store/admin/returns/:id/receive", authenticateToken, requireAd
   }
 });
 
-router.post("/api/store/admin/returns/:id/refund", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/returns/:id/refund", authenticateToken, requirePermission("returns:manage"), async (req, res) => {
   try {
     await returns.refundReturn(String(req.params.id));
     const ret = await returns.getReturn(String(req.params.id));
@@ -231,7 +231,7 @@ router.post("/api/store/admin/returns/:id/refund", authenticateToken, requireAdm
   }
 });
 
-router.post("/api/store/admin/returns/:id/exchange", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/returns/:id/exchange", authenticateToken, requirePermission("returns:manage"), async (req, res) => {
   try {
     await returns.exchangeReturn(String(req.params.id), req.body.staffNotes);
     const ret = await returns.getReturn(String(req.params.id));
@@ -242,7 +242,7 @@ router.post("/api/store/admin/returns/:id/exchange", authenticateToken, requireA
   }
 });
 
-router.post("/api/store/admin/returns/:id/store-credit", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/returns/:id/store-credit", authenticateToken, requirePermission("returns:manage"), async (req, res) => {
   try {
     await returns.storeCreditReturn(String(req.params.id), req.body.staffNotes);
     const ret = await returns.getReturn(String(req.params.id));
@@ -255,7 +255,7 @@ router.post("/api/store/admin/returns/:id/store-credit", authenticateToken, requ
 
 // ==================== Delivery Zones ====================
 
-router.get("/api/store/admin/delivery-zones", authenticateToken, requireAdmin, async (_req, res) => {
+router.get("/api/store/admin/delivery-zones", authenticateToken, requirePermission("settings:manage"), async (_req, res) => {
   try {
     res.json(await settings.getAllDeliveryZones());
   } catch (error) {
@@ -263,7 +263,7 @@ router.get("/api/store/admin/delivery-zones", authenticateToken, requireAdmin, a
   }
 });
 
-router.post("/api/store/admin/delivery-zones", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/delivery-zones", authenticateToken, requirePermission("settings:manage"), async (req, res) => {
   try {
     const zone = await settings.createDeliveryZone(req.body);
     res.status(201).json(zone);
@@ -272,7 +272,7 @@ router.post("/api/store/admin/delivery-zones", authenticateToken, requireAdmin, 
   }
 });
 
-router.patch("/api/store/admin/delivery-zones/:id", authenticateToken, requireAdmin, async (req, res) => {
+router.patch("/api/store/admin/delivery-zones/:id", authenticateToken, requirePermission("settings:manage"), async (req, res) => {
   try {
     const zone = await settings.updateDeliveryZone(String(req.params.id), req.body);
     if (!zone) return res.status(404).json({ message: "Delivery zone not found" });
@@ -282,7 +282,7 @@ router.patch("/api/store/admin/delivery-zones/:id", authenticateToken, requireAd
   }
 });
 
-router.delete("/api/store/admin/delivery-zones/:id", authenticateToken, requireAdmin, async (req, res) => {
+router.delete("/api/store/admin/delivery-zones/:id", authenticateToken, requirePermission("settings:manage"), async (req, res) => {
   try {
     await settings.deleteDeliveryZone(String(req.params.id));
     res.json({ message: "Delivery zone deleted" });
@@ -293,7 +293,7 @@ router.delete("/api/store/admin/delivery-zones/:id", authenticateToken, requireA
 
 // ==================== Store Settings ====================
 
-router.get("/api/store/admin/settings", authenticateToken, requireAdmin, async (_req, res) => {
+router.get("/api/store/admin/settings", authenticateToken, requirePermission("settings:read"), async (_req, res) => {
   try {
     res.json(await settings.getStoreSettings());
   } catch (error) {
@@ -301,7 +301,7 @@ router.get("/api/store/admin/settings", authenticateToken, requireAdmin, async (
   }
 });
 
-router.patch("/api/store/admin/settings", authenticateToken, requireAdmin, async (req, res) => {
+router.patch("/api/store/admin/settings", authenticateToken, requirePermission("settings:manage"), async (req, res) => {
   try {
     const updated = await settings.updateStoreSettings(req.body);
     res.json(updated);
@@ -312,7 +312,7 @@ router.patch("/api/store/admin/settings", authenticateToken, requireAdmin, async
 
 // ==================== Sync Status ====================
 
-router.get("/api/store/admin/settings/sync-status", authenticateToken, requireAdmin, async (_req, res) => {
+router.get("/api/store/admin/settings/sync-status", authenticateToken, requirePermission("sync:manage"), async (_req, res) => {
   try {
     const stats = await syncStorage.getQueueStats();
     res.json(stats);
@@ -321,7 +321,7 @@ router.get("/api/store/admin/settings/sync-status", authenticateToken, requireAd
   }
 });
 
-router.post("/api/store/admin/settings/sync-retry/:id", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/settings/sync-retry/:id", authenticateToken, requirePermission("sync:manage"), async (req, res) => {
   try {
     await syncStorage.retryEvent(String(req.params.id));
     res.json({ message: "Event queued for retry" });
@@ -330,7 +330,7 @@ router.post("/api/store/admin/settings/sync-retry/:id", authenticateToken, requi
   }
 });
 
-router.post("/api/store/admin/settings/sync-resolve/:id", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/api/store/admin/settings/sync-resolve/:id", authenticateToken, requirePermission("sync:manage"), async (req, res) => {
   try {
     await syncStorage.resolveEvent(String(req.params.id));
     res.json({ message: "Event resolved" });

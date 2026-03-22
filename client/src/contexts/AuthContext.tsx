@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { api, setTokens, clearTokens } from "@/lib/api";
+import { hasPermission as checkPermission, type Permission } from "@/lib/permissions";
 
 export interface User {
   id: string;
@@ -8,7 +9,7 @@ export interface User {
   firstName: string | null;
   lastName: string | null;
   phone: string | null;
-  role: string;
+  role: string | null;
 }
 
 interface RegisterData {
@@ -19,6 +20,12 @@ interface RegisterData {
   phone?: string;
 }
 
+interface AuthResponse {
+  customer: User;
+  accessToken: string;
+  refreshToken: string;
+}
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -27,6 +34,7 @@ interface AuthState {
   garageLogin: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
+  hasPermission: (permission: Permission) => boolean;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -38,13 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const stored = localStorage.getItem("ps_refresh_token");
     if (stored) {
-      api<{ user: User; accessToken: string; refreshToken: string }>("/api/store/auth/refresh", {
+      api<AuthResponse>("/api/store/auth/refresh", {
         method: "POST",
         body: JSON.stringify({ refreshToken: stored }),
       })
         .then((data) => {
           setTokens(data.accessToken, data.refreshToken);
-          setUser(data.user);
+          setUser(data.customer);
         })
         .catch(() => {
           clearTokens();
@@ -56,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const data = await api<{ user: User; accessToken: string; refreshToken: string }>(
+    const data = await api<AuthResponse>(
       "/api/store/auth/login",
       {
         method: "POST",
@@ -64,11 +72,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
     setTokens(data.accessToken, data.refreshToken);
-    setUser(data.user);
+    setUser(data.customer);
   }, []);
 
   const garageLogin = useCallback(async (email: string, password: string) => {
-    const data = await api<{ user: User; accessToken: string; refreshToken: string }>(
+    const data = await api<AuthResponse>(
       "/api/store/auth/316-login",
       {
         method: "POST",
@@ -76,11 +84,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
     setTokens(data.accessToken, data.refreshToken);
-    setUser(data.user);
+    setUser(data.customer);
   }, []);
 
   const register = useCallback(async (data: RegisterData) => {
-    const result = await api<{ user: User; accessToken: string; refreshToken: string }>(
+    const result = await api<AuthResponse>(
       "/api/store/auth/register",
       {
         method: "POST",
@@ -88,13 +96,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
     setTokens(result.accessToken, result.refreshToken);
-    setUser(result.user);
+    setUser(result.customer);
   }, []);
 
   const logout = useCallback(() => {
     clearTokens();
     setUser(null);
   }, []);
+
+  const hasPermissionFn = useCallback((permission: Permission) => {
+    return checkPermission(user?.role, permission);
+  }, [user?.role]);
 
   const value: AuthState = {
     user,
@@ -104,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     garageLogin,
     register,
     logout,
+    hasPermission: hasPermissionFn,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

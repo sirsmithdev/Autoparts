@@ -15,6 +15,13 @@
       "when": 1774138240030,
       "tag": "0001_add_garage_user_id_column",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1774211654536,
+      "tag": "0002_add_staff_role_to_customers",
+      "breakpoints": true
     }
   ]
 }

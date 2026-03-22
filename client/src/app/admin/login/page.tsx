@@ -4,8 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
 
-const STAFF_ROLES = ["admin", "manager", "receptionist"];
-
 export default function AdminLoginPage() {
   const { login, isAuthenticated, user } = useAuth();
   const router = useRouter();
@@ -16,12 +14,12 @@ export default function AdminLoginPage() {
 
   // Already logged in as staff — redirect
   useEffect(() => {
-    if (isAuthenticated && user && STAFF_ROLES.includes(user.role)) {
+    if (isAuthenticated && user?.role) {
       router.replace("/admin/orders");
     }
   }, [isAuthenticated, user, router]);
 
-  if (isAuthenticated && user && STAFF_ROLES.includes(user.role)) return null;
+  if (isAuthenticated && user?.role) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
