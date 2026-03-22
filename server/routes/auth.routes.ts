@@ -7,9 +7,11 @@ import { authenticateToken } from "../middleware.js";
 import {
   generateAccessToken,
   generateRefreshToken,
+  generateEmailVerifyToken,
   verifyToken,
   isAdminEmail,
 } from "../auth.js";
+import { sendVerificationEmail, sendWelcomeEmail } from "../email.js";
 import * as customerStore from "../storage/customers.js";
 import type { Customer } from "../schema.js";
 
@@ -100,6 +102,16 @@ router.post("/api/store/auth/register", async (req, res) => {
     });
 
     const tokens = await issueTokens(customer);
+
+    // Send verification email (fire-and-forget, don't block registration)
+    const verifyToken = generateEmailVerifyToken({ id: customer.id, email: customer.email });
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+    const verifyUrl = `${baseUrl}/parts/verify-email?token=${verifyToken}`;
+    sendVerificationEmail(
+      customer.email,
+      customer.firstName || "there",
+      verifyUrl,
+    ).catch((err) => console.error("Failed to send verification email:", err));
 
     res.status(201).json({
       customer: toCustomerResponse(customer),
@@ -223,6 +235,67 @@ router.post("/api/store/auth/google", async (req, res) => {
   }
 });
 
+// ─── POST /api/store/auth/316-login ─────────────────────
+
+router.post("/api/store/auth/316-login", async (req, res) => {
+  try {
+    const body = loginSchema.parse(req.body);
+
+    const { verifyGarageCredentials } = await import(
+      "../sync/garageAuth.js"
+    );
+    const result = await verifyGarageCredentials(body.email, body.password);
+
+    if (!result.success || !result.user) {
+      return res
+        .status(401)
+        .json({ message: result.error || "Invalid 316 Automotive credentials" });
+    }
+
+    const garageUser = result.user;
+
+    // 1. Already linked by garageUserId
+    let customer = await customerStore.findByGarageUserId(garageUser.id);
+
+    if (!customer) {
+      // 2. Existing email account — auto-link garage account
+      customer = await customerStore.findByEmail(garageUser.email);
+      if (customer) {
+        await customerStore.linkGarageAccount(customer.id, garageUser.id);
+        customer = await customerStore.findById(customer.id);
+      }
+    }
+
+    if (!customer) {
+      // 3. Brand new customer — create from garage profile
+      customer = await customerStore.createGarageCustomer({
+        email: garageUser.email,
+        garageUserId: garageUser.id,
+        firstName: garageUser.firstName,
+        lastName: garageUser.lastName,
+        phone: garageUser.phone,
+      });
+    }
+
+    if (!customer!.isActive) {
+      return res.status(403).json({ message: "Account is deactivated" });
+    }
+
+    const tokens = await issueTokens(customer!);
+
+    res.json({
+      customer: toCustomerResponse(customer!),
+      ...tokens,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: error.errors[0].message });
+    }
+    console.error("316 login failed:", error);
+    res.status(500).json({ message: "316 Automotive login failed" });
+  }
+});
+
 // ─── POST /api/store/auth/refresh ────────────────────────
 
 router.post("/api/store/auth/refresh", async (req, res) => {
@@ -306,6 +379,88 @@ router.patch("/api/store/auth/me", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Profile update failed" });
   }
 });
+
+// ─── POST /api/store/auth/verify-email ───────────────────
+
+router.post("/api/store/auth/verify-email", async (req, res) => {
+  try {
+    const { token } = req.body as { token?: string };
+    if (!token) {
+      return res.status(400).json({ message: "Verification token is required" });
+    }
+
+    let payload;
+    try {
+      payload = verifyToken(token);
+    } catch {
+      return res.status(400).json({ message: "Invalid or expired verification link" });
+    }
+
+    if (payload.type !== "email_verify") {
+      return res.status(400).json({ message: "Invalid token type" });
+    }
+
+    const customer = await customerStore.findById(payload.customerId);
+    if (!customer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    if (customer.emailVerified) {
+      return res.json({ message: "Email already verified" });
+    }
+
+    await customerStore.markEmailVerified(customer.id);
+
+    // Send welcome email
+    sendWelcomeEmail(
+      customer.email,
+      customer.firstName || "there",
+    ).catch((err) => console.error("Failed to send welcome email:", err));
+
+    res.json({ message: "Email verified successfully" });
+  } catch (error) {
+    console.error("Email verification failed:", error);
+    res.status(500).json({ message: "Email verification failed" });
+  }
+});
+
+// ─── POST /api/store/auth/resend-verification ────────────
+
+router.post(
+  "/api/store/auth/resend-verification",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const customer = await customerStore.findById(req.customer!.customerId);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      if (customer.emailVerified) {
+        return res.json({ message: "Email already verified" });
+      }
+
+      const verifyToken = generateEmailVerifyToken({ id: customer.id, email: customer.email });
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+      const verifyUrl = `${baseUrl}/parts/verify-email?token=${verifyToken}`;
+
+      const sent = await sendVerificationEmail(
+        customer.email,
+        customer.firstName || "there",
+        verifyUrl,
+      );
+
+      if (!sent) {
+        return res.status(500).json({ message: "Failed to send verification email" });
+      }
+
+      res.json({ message: "Verification email sent" });
+    } catch (error) {
+      console.error("Resend verification failed:", error);
+      res.status(500).json({ message: "Failed to resend verification email" });
+    }
+  },
+);
 
 // ─── POST /api/store/auth/set-password ───────────────────
 

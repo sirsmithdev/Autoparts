@@ -24,6 +24,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  garageLogin: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
 }
@@ -66,6 +67,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   }, []);
 
+  const garageLogin = useCallback(async (email: string, password: string) => {
+    const data = await api<{ user: User; accessToken: string; refreshToken: string }>(
+      "/api/store/auth/316-login",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      }
+    );
+    setTokens(data.accessToken, data.refreshToken);
+    setUser(data.user);
+  }, []);
+
   const register = useCallback(async (data: RegisterData) => {
     const result = await api<{ user: User; accessToken: string; refreshToken: string }>(
       "/api/store/auth/register",
@@ -88,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: !!user,
     isLoading,
     login,
+    garageLogin,
     register,
     logout,
   };

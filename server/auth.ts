@@ -12,7 +12,7 @@ export interface TokenPayload {
   customerId: string;
   email: string;
   isAdmin: boolean;
-  type: "access" | "refresh";
+  type: "access" | "refresh" | "email_verify";
 }
 
 function getJwtSecret(): string {
@@ -56,6 +56,20 @@ export function generateRefreshToken(customer: {
 /** Decodes and verifies a token. Throws on invalid or expired tokens. */
 export function verifyToken(token: string): TokenPayload {
   return jwt.verify(token, getJwtSecret()) as TokenPayload;
+}
+
+/** Creates a 24-hour email verification token. */
+export function generateEmailVerifyToken(customer: {
+  id: string;
+  email: string;
+}): string {
+  const payload: TokenPayload = {
+    customerId: customer.id,
+    email: customer.email,
+    isAdmin: false,
+    type: "email_verify",
+  };
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: "24h" });
 }
 
 /** Checks if the given email is in the STORE_ADMIN_EMAILS env var (comma-separated). */

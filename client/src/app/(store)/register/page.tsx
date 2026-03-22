@@ -5,7 +5,7 @@ import { mergeGuestCartToServer } from "@/hooks/useCart";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff, Wrench } from "lucide-react";
 
 function RegisterForm() {
   const { register, isAuthenticated } = useAuth();
@@ -58,6 +58,15 @@ function RegisterForm() {
         <p className="text-sm text-muted-foreground">
           There are many advantages to creating an account: the payment process is faster, shipment tracking is possible and much more.
         </p>
+
+        <Link
+          href="/login"
+          onClick={(e) => { e.preventDefault(); window.location.href = "/login"; }}
+          className="flex items-center gap-3 p-3 border-2 border-primary/20 rounded-md text-sm font-medium hover:bg-primary/5 transition-colors"
+        >
+          <Wrench className="h-5 w-5 text-primary shrink-0" />
+          <span>Already have a 316 Automotive account? <span className="text-primary">Sign in instead</span></span>
+        </Link>
 
         {error && (
           <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">

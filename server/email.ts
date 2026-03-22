@@ -74,6 +74,51 @@ async function sendEmail(
 }
 
 // ---------------------------------------------------------------------------
+// Registration & verification emails
+// ---------------------------------------------------------------------------
+
+/**
+ * Sent after registration with a verification link.
+ */
+export async function sendVerificationEmail(
+  customerEmail: string,
+  customerName: string,
+  verifyUrl: string,
+): Promise<boolean> {
+  const body = `
+    ${greeting(customerName)}
+    <p>Welcome to ${STORE_NAME}! Please verify your email address to complete your registration.</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${escapeHtml(verifyUrl)}"
+         style="display: inline-block; background: #1a1a2e; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: bold; font-size: 14px;">
+        Verify Email Address
+      </a>
+    </div>
+    <p style="font-size: 13px; color: #666;">This link expires in 24 hours. If you didn't create this account, you can safely ignore this email.</p>
+    <p style="font-size: 12px; color: #999; word-break: break-all;">Or copy this link: ${escapeHtml(verifyUrl)}</p>`;
+
+  const subject = "Verify your email address";
+  return sendEmail(customerEmail, subject, wrapInLayout(subject, body));
+}
+
+/**
+ * Sent after a customer verifies their email.
+ */
+export async function sendWelcomeEmail(
+  customerEmail: string,
+  customerName: string,
+): Promise<boolean> {
+  const body = `
+    ${greeting(customerName)}
+    <p>Your email has been verified. Your account is all set!</p>
+    <p>You can now enjoy the full shopping experience — browse parts, save to your cart, and check out quickly.</p>
+    <p>If you have any questions, just reply to this email.</p>`;
+
+  const subject = `Welcome to ${STORE_NAME}!`;
+  return sendEmail(customerEmail, subject, wrapInLayout(subject, body));
+}
+
+// ---------------------------------------------------------------------------
 // Order lifecycle emails
 // ---------------------------------------------------------------------------
 

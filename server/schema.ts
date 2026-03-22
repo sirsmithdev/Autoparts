@@ -20,7 +20,7 @@ import { randomUUID } from "crypto";
 
 // ==================== Enum Values ====================
 
-export const authProviderValues = ["email", "google"] as const;
+export const authProviderValues = ["email", "google", "garage"] as const;
 export const partConditionValues = ["new", "refurbished", "used"] as const;
 export const partNumberTypeValues = ["oem", "aftermarket", "interchange"] as const;
 export const onlineOrderStatusValues = [
@@ -67,6 +67,7 @@ export const customers = mysqlTable("customers", {
   parish: text("parish"),
   authProvider: mysqlEnum("auth_provider", authProviderValues).notNull().default("email"),
   googleId: varchar("google_id", { length: 255 }).unique(),
+  garageUserId: varchar("garage_user_id", { length: 36 }).unique(),
   profileImageUrl: text("profile_image_url"),
   emailVerified: boolean("email_verified").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),

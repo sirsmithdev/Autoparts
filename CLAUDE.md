@@ -113,6 +113,9 @@ docker build -t 316-parts-store .
 | `GARAGE_SYNC_API_KEY` | Authenticates outbound sync requests to garage |
 | `GOOGLE_CLIENT_ID` | Google Sign-In client ID |
 | `STORE_ADMIN_EMAILS` | Comma-separated admin email addresses |
+| `GARAGE_AUTH_URL` | Garage app's credential verification endpoint (e.g. `https://316-automotive.com/api/auth/verify-credentials`) |
+| `RESEND_API_KEY` | Resend API key for transactional emails |
+| `FROM_EMAIL` | Sender email address (default: `orders@316-automotive.com`) |
 | `POWERTRANZ_*` | Payment gateway credentials (if checkout is enabled) |
 
 **GitHub Secrets** (repo → Settings → Secrets):
@@ -145,18 +148,22 @@ This service owns an independent `partsstore` database on the same DigitalOcean 
 The parts store has its own customer-based JWT authentication, completely separate from the garage app's session-based auth.
 
 - **Customers table**: Own `customers` table (not the garage `users` table)
-- **Registration**: Email/password or Google Sign-In (via `google-auth-library`)
+- **Registration**: Email/password, Google Sign-In, or **316 Automotive account** (cross-app login)
+- **Email verification**: On registration, a verification email is sent via Resend with a signed JWT link (24h expiry). Verified status stored in `emailVerified` column
 - **Tokens**: Access token (15m expiry) + refresh token (7d expiry)
 - **Refresh flow**: Token rotation with server-side storage — old token is deleted, new pair issued
 - **Revocation**: Refresh tokens stored as SHA-256 hashes in `refresh_tokens` table; `revokeAllRefreshTokens()` for password changes
 - **Admin**: Determined by `STORE_ADMIN_EMAILS` env var (comma-separated), checked at token issuance
 - **Google linking**: Existing email/password customers can link their Google account
+- **316 Automotive login**: Customers with existing garage accounts can sign in via `POST /api/store/auth/316-login`. Credentials are verified against the garage API (`GARAGE_AUTH_URL`), and the parts store creates/links a local customer record. Auto-links by email if the customer already exists. Linked via `garageUserId` column
 
 **Key files:**
-- `server/auth.ts` — Token creation/verification, admin email check
+- `server/auth.ts` — Token creation/verification (access, refresh, email_verify), admin email check
 - `server/middleware.ts` — `authenticateToken`, `optionalAuth`, `requireAdmin`, `validateSyncApiKey`
-- `server/storage/customers.ts` — Customer CRUD, password hashing, refresh token management
-- `server/routes/auth.routes.ts` — Register, login, Google sign-in, refresh, profile endpoints
+- `server/storage/customers.ts` — Customer CRUD, password hashing, refresh token management, garage account linking
+- `server/routes/auth.routes.ts` — Register, login, 316 login, Google sign-in, refresh, verify email, profile endpoints
+- `server/sync/garageAuth.ts` — HTTP client for verifying credentials against the 316 garage app
+- `server/email.ts` — Resend-powered transactional emails (verification, welcome, order lifecycle)
 
 ## Sync API
 

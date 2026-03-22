@@ -102,6 +102,44 @@ export async function createGoogleCustomer(data: {
   return created;
 }
 
+/** Find customer by garage user ID. */
+export async function findByGarageUserId(garageUserId: string): Promise<Customer | null> {
+  const [result] = await db
+    .select()
+    .from(customers)
+    .where(eq(customers.garageUserId, garageUserId))
+    .limit(1);
+  return result ?? null;
+}
+
+/** Create customer from 316 Automotive garage login (no local password). */
+export async function createGarageCustomer(data: {
+  email: string;
+  garageUserId: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+}): Promise<Customer> {
+  const id = crypto.randomUUID();
+
+  await db.insert(customers).values({
+    id,
+    email: data.email,
+    password: null,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    phone: data.phone ?? null,
+    garageUserId: data.garageUserId,
+    authProvider: "garage",
+  });
+
+  const created = await findById(id);
+  if (!created) {
+    throw new Error("Failed to retrieve customer after insert");
+  }
+  return created;
+}
+
 // ─── Customer Updates ─────────────────────────────────────
 
 /** Link a Google account to an existing customer. */
@@ -115,6 +153,20 @@ export async function linkGoogleAccount(
     .set({
       googleId,
       profileImageUrl: profileImageUrl ?? undefined,
+      updatedAt: new Date(),
+    })
+    .where(eq(customers.id, customerId));
+}
+
+/** Link a 316 Automotive garage account to an existing customer. */
+export async function linkGarageAccount(
+  customerId: string,
+  garageUserId: string,
+): Promise<void> {
+  await db
+    .update(customers)
+    .set({
+      garageUserId,
       updatedAt: new Date(),
     })
     .where(eq(customers.id, customerId));
@@ -134,6 +186,14 @@ export async function updateProfile(
   await db
     .update(customers)
     .set({ ...data, updatedAt: new Date() })
+    .where(eq(customers.id, customerId));
+}
+
+/** Mark a customer's email as verified. */
+export async function markEmailVerified(customerId: string): Promise<void> {
+  await db
+    .update(customers)
+    .set({ emailVerified: true, updatedAt: new Date() })
     .where(eq(customers.id, customerId));
 }
 
