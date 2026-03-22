@@ -27,11 +27,6 @@ function looksLikeVin(s: string): boolean {
   return t.length === 17 && /^[A-HJ-NPR-Z0-9]{17}$/.test(t);
 }
 
-const NAV_CATEGORIES = [
-  "Brakes", "Engine", "Electrical", "Suspension", "Body",
-  "Cooling", "Transmission", "Filters", "Exhaust",
-];
-
 export function StoreHeader() {
   const { isAuthenticated, user, logout } = useAuth();
   const guestItemCount = useGuestCart((s) => s.guestItemCount);
@@ -81,14 +76,14 @@ export function StoreHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-50">
-      {/* Main dark header bar */}
-      <div className="bg-[hsl(var(--header-bg))] text-white">
+    <header className="sticky top-0 z-50 bg-white shadow-sm">
+      {/* Main header bar — white background */}
+      <div className="border-b border-[rgb(231,236,238)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center gap-4 h-16">
+          <div className="flex items-center gap-4 h-[76px]">
             {/* Mobile menu toggle */}
             <button
-              className="lg:hidden p-2 -ml-2 text-gray-300 hover:text-white"
+              className="lg:hidden p-2 -ml-2 text-slate-600 hover:text-foreground"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -96,9 +91,11 @@ export function StoreHeader() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5 font-bold text-lg shrink-0">
-              <Store className="h-6 w-6 text-blue-400" />
-              <span className="hidden sm:inline">316 Auto Parts</span>
-              <span className="sm:hidden">316</span>
+              <div className="w-9 h-9 rounded-full bg-red-500 flex items-center justify-center">
+                <Store className="h-5 w-5 text-white" />
+              </div>
+              <span className="hidden sm:inline text-foreground">316 Auto Parts</span>
+              <span className="sm:hidden text-foreground">316</span>
             </Link>
 
             {/* My Garage - vehicle selector */}
@@ -112,7 +109,7 @@ export function StoreHeader() {
                 <input
                   type="text"
                   placeholder="Search popular products..."
-                  className="w-full pl-4 pr-12 py-2.5 bg-white/10 border border-white/20 rounded-l-md text-sm text-white placeholder:text-gray-400 focus:outline-none focus:bg-white/15 focus:border-blue-400 transition-colors"
+                  className="w-full pl-4 pr-12 py-2.5 bg-white border border-slate-300 rounded-l-md text-sm text-foreground placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   disabled={searching}
@@ -128,13 +125,13 @@ export function StoreHeader() {
             </form>
 
             {/* Right nav icons */}
-            <nav className="flex items-center gap-0.5 ml-auto">
+            <nav className="flex items-center gap-1 ml-auto">
               {/* User menu */}
               {isAuthenticated ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="flex items-center gap-1.5 p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10">
+                  <DropdownMenuTrigger className="flex flex-col items-center gap-0.5 p-2 text-[rgb(49,67,80)] hover:text-foreground transition-colors rounded-md hover:bg-slate-100">
                     <User className="h-5 w-5" />
-                    <span className="hidden lg:inline text-xs max-w-[80px] truncate">
+                    <span className="text-[11px] font-medium hidden lg:block">
                       {user?.firstName || "Account"}
                     </span>
                   </DropdownMenuTrigger>
@@ -159,29 +156,27 @@ export function StoreHeader() {
               ) : (
                 <Link
                   href="/login"
-                  className="flex items-center gap-1.5 p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10"
+                  className="flex flex-col items-center gap-0.5 p-2 text-[rgb(49,67,80)] hover:text-foreground transition-colors rounded-md hover:bg-slate-100"
                 >
                   <User className="h-5 w-5" />
-                  <span className="hidden lg:inline text-xs">Sign In</span>
+                  <span className="text-[11px] font-medium hidden lg:block">Sign In</span>
                 </Link>
               )}
 
               {/* Wishlist placeholder */}
-              <button className="relative p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10 hidden sm:flex">
+              <button className="relative flex flex-col items-center gap-0.5 p-2 text-[rgb(49,67,80)] hover:text-foreground transition-colors rounded-md hover:bg-slate-100 hidden sm:flex">
                 <Heart className="h-5 w-5" />
-                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center ring-2 ring-[hsl(var(--header-bg))]">
+                <span className="absolute top-0.5 right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
                   0
                 </span>
               </button>
 
               {/* Cart */}
-              <Link href="/cart" className="relative p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10">
+              <Link href="/cart" className="relative flex flex-col items-center gap-0.5 p-2 text-[rgb(49,67,80)] hover:text-foreground transition-colors rounded-md hover:bg-slate-100">
                 <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center ring-2 ring-[hsl(var(--header-bg))]">
-                    {cartCount > 99 ? "99+" : cartCount}
-                  </span>
-                )}
+                <span className="absolute top-0.5 right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
               </Link>
             </nav>
           </div>
@@ -192,7 +187,7 @@ export function StoreHeader() {
               <input
                 type="text"
                 placeholder="Search products..."
-                className="w-full pl-4 pr-12 py-2.5 bg-white/10 border border-white/20 rounded-l-md text-sm text-white placeholder:text-gray-400 focus:outline-none focus:bg-white/15 focus:border-blue-400 transition-colors"
+                className="w-full pl-4 pr-12 py-2.5 bg-white border border-slate-300 rounded-l-md text-sm text-foreground placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 disabled={searching}
@@ -209,41 +204,38 @@ export function StoreHeader() {
         </div>
       </div>
 
-      {/* Category navigation bar */}
-      <div className="bg-[hsl(var(--header-nav-bg))] border-b border-white/10">
+      {/* Category navigation bar — light blue-gray background */}
+      <div className="bg-[rgb(239,244,247)] border-b border-[rgb(222,230,235)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-0">
             {/* All Categories button */}
             <Link
               href="/search"
-              className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-sm text-white font-medium hover:bg-white/10 rounded-sm transition-colors"
+              className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors"
             >
               <Grid3X3 className="h-4 w-4" />
               All Categories
             </Link>
 
-            <span className="w-px h-5 bg-white/20 shrink-0 mx-1" />
+            <span className="w-px h-5 bg-slate-300 shrink-0 mx-1" />
 
-            <Link href="/" className="shrink-0 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-sm transition-colors">
+            <Link href="/" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
               Home
             </Link>
-            <Link href="/search" className="shrink-0 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-sm transition-colors">
+            <Link href="/search" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
               Shop
             </Link>
-            {NAV_CATEGORIES.slice(0, 5).map((cat) => (
-              <Link
-                key={cat}
-                href={`/search?category=${encodeURIComponent(cat)}`}
-                className="shrink-0 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-sm transition-colors"
-              >
-                {cat}
-              </Link>
-            ))}
-            <Link
-              href="/diagrams"
-              className="shrink-0 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-sm transition-colors"
-            >
-              OEM Diagrams
+            <Link href="/search?category=Brakes" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
+              Tires & Wheels
+            </Link>
+            <Link href="/search?category=Electrical" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
+              Headlights & Lighting
+            </Link>
+            <Link href="/diagrams" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
+              Blog
+            </Link>
+            <Link href="/" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
+              Contact
             </Link>
 
             <span className="flex-1" />
@@ -251,14 +243,14 @@ export function StoreHeader() {
             {/* Right badges */}
             <Link
               href="/search?sort=popular"
-              className="shrink-0 flex items-center gap-1 px-3 py-2.5 text-sm text-orange-300 hover:text-orange-200 font-medium transition-colors"
+              className="shrink-0 flex items-center gap-1 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary transition-colors"
             >
-              <Flame className="h-3.5 w-3.5" />
+              <Flame className="h-3.5 w-3.5 text-orange-500" />
               Best Seller
             </Link>
             <Link
               href="/search?condition=used"
-              className="shrink-0 flex items-center gap-1 px-2 py-1 text-xs font-bold text-white bg-red-500 rounded-sm transition-colors hover:bg-red-600"
+              className="shrink-0 flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-white bg-red-500 rounded-sm transition-colors hover:bg-red-600"
             >
               <Tag className="h-3 w-3" />
               SALE
@@ -269,20 +261,20 @@ export function StoreHeader() {
 
       {/* Mobile menu overlay */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 top-[calc(4rem+2.75rem)]">
+        <div className="lg:hidden fixed inset-0 z-40 top-[76px]">
           <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative bg-[hsl(var(--header-bg))] border-b border-white/10 p-4 space-y-3 max-h-[70vh] overflow-y-auto">
+          <div className="relative bg-white border-b p-4 space-y-3 max-h-[70vh] overflow-y-auto shadow-lg">
             <div className="md:hidden">
               <HeaderVehicleSelector />
             </div>
 
-            <div className="space-y-1 pt-2 border-t border-white/10">
-              {NAV_CATEGORIES.map((cat) => (
+            <div className="space-y-1 pt-2 border-t">
+              {["Brakes", "Engine", "Electrical", "Suspension", "Body", "Cooling", "Transmission", "Filters", "Exhaust"].map((cat) => (
                 <Link
                   key={cat}
                   href={`/search?category=${encodeURIComponent(cat)}`}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white rounded-md hover:bg-white/10"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-foreground rounded-md hover:bg-slate-100"
                 >
                   {cat}
                 </Link>
@@ -290,11 +282,11 @@ export function StoreHeader() {
             </div>
 
             {isAuthenticated && (
-              <div className="space-y-1 pt-2 border-t border-white/10">
-                <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white rounded-md hover:bg-white/10">
+              <div className="space-y-1 pt-2 border-t">
+                <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-foreground rounded-md hover:bg-slate-100">
                   <Package className="h-4 w-4" /> My Orders
                 </Link>
-                <Link href="/returns" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white rounded-md hover:bg-white/10">
+                <Link href="/returns" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-foreground rounded-md hover:bg-slate-100">
                   <RotateCcw className="h-4 w-4" /> Returns
                 </Link>
               </div>

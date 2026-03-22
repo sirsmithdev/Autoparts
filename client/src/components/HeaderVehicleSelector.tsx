@@ -82,20 +82,20 @@ export function HeaderVehicleSelector() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors border border-white/20 bg-white/5 hover:bg-white/10 text-gray-200 hover:text-white"
+        className="flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[rgb(49,67,80)]"
         title="Shop by vehicle"
       >
-        <Warehouse className="h-4 w-4 text-blue-400" />
+        <Warehouse className="h-4 w-4 text-primary" />
         <div className="hidden lg:flex flex-col items-start leading-tight">
-          <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">My Garage</span>
-          <span className="text-xs max-w-[140px] truncate">
-            {hasVehicle ? label : "Select Vehicle"}
+          <span className="text-[11px] text-[rgb(49,67,80)] font-normal">Add Vehicle</span>
+          <span className="text-[13px] font-semibold text-[rgb(49,67,80)] max-w-[140px] truncate">
+            {hasVehicle ? label : "My Garage"}
           </span>
         </div>
         {hasVehicle ? (
-          <X className="h-3.5 w-3.5 text-gray-400 hover:text-white" onClick={handleClearVehicle} />
+          <X className="h-3.5 w-3.5 text-slate-400 hover:text-foreground" onClick={handleClearVehicle} />
         ) : (
-          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+          <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
         )}
       </button>
       {open && (
