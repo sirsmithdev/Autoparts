@@ -6,6 +6,9 @@ import { Router } from "express";
 import { authenticateToken, requirePermission } from "../middleware.js";
 import * as warehouse from "../storage/warehouse.js";
 import * as pickListStorage from "../storage/pickLists.js";
+import { db } from "../db.js";
+import { products, productBinAssignments } from "../schema.js";
+import { eq, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -410,6 +413,103 @@ router.post(
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to cancel pick list";
       res.status(400).json({ message });
+    }
+  },
+);
+
+// ==================== Stock Reconciliation ====================
+
+router.get(
+  "/api/store/admin/warehouse/reconciliation",
+  authenticateToken,
+  requirePermission("warehouse:manage"),
+  async (_req, res) => {
+    try {
+      // Find products where products.quantity != SUM(product_bin_assignments.quantity)
+      const discrepancies = await db
+        .select({
+          productId: products.id,
+          productName: products.name,
+          partNumber: products.partNumber,
+          systemQuantity: products.quantity,
+          binTotalQuantity:
+            sql<number>`COALESCE(SUM(${productBinAssignments.quantity}), 0)`,
+          discrepancy: sql<number>`${products.quantity} - COALESCE(SUM(${productBinAssignments.quantity}), 0)`,
+        })
+        .from(products)
+        .leftJoin(
+          productBinAssignments,
+          eq(products.id, productBinAssignments.productId),
+        )
+        .where(eq(products.isActive, true))
+        .groupBy(products.id, products.name, products.partNumber, products.quantity)
+        .having(
+          sql`${products.quantity} != COALESCE(SUM(${productBinAssignments.quantity}), 0)`,
+        )
+        .orderBy(
+          sql`ABS(${products.quantity} - COALESCE(SUM(${productBinAssignments.quantity}), 0)) DESC`,
+        );
+
+      res.json({
+        discrepancies: discrepancies.map((d) => ({
+          productId: d.productId,
+          productName: d.productName,
+          partNumber: d.partNumber,
+          systemQuantity: Number(d.systemQuantity),
+          binTotalQuantity: Number(d.binTotalQuantity),
+          discrepancy: Number(d.discrepancy),
+        })),
+        total: discrepancies.length,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get reconciliation data" });
+    }
+  },
+);
+
+router.post(
+  "/api/store/admin/warehouse/reconciliation/:productId",
+  authenticateToken,
+  requirePermission("warehouse:manage"),
+  async (req, res) => {
+    try {
+      const productId = String(req.params.productId);
+
+      // Verify product exists
+      const [product] = await db
+        .select()
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1);
+      if (!product) {
+        res.status(404).json({ message: "Product not found" });
+        return;
+      }
+
+      // Get the sum of bin assignment quantities
+      const [binSum] = await db
+        .select({
+          total: sql<number>`COALESCE(SUM(${productBinAssignments.quantity}), 0)`,
+        })
+        .from(productBinAssignments)
+        .where(eq(productBinAssignments.productId, productId));
+
+      const binTotal = Number(binSum.total);
+
+      // Set products.quantity = SUM(bin quantities)
+      await db
+        .update(products)
+        .set({ quantity: binTotal })
+        .where(eq(products.id, productId));
+
+      res.json({
+        message: "Product quantity reconciled",
+        productId,
+        previousQuantity: product.quantity,
+        reconciledQuantity: binTotal,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reconcile product quantity" });
     }
   },
 );

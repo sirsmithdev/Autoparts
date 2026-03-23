@@ -365,11 +365,77 @@ export async function mergeGuestCart(
   }
 }
 
-/** Cron: delete carts older than cartExpirationDays from store settings. Returns count deleted. */
+/** Cron: delete carts older than cartExpirationDays from store settings. Returns count deleted.
+ *  Before deleting, sends abandoned-cart recovery emails for carts that are 3–30 days old
+ *  and belong to a registered customer.
+ */
 export async function cleanupStaleCarts(): Promise<number> {
   const settings = await getSettings();
   const days = settings?.cartExpirationDays ?? 30;
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  // ── Send abandoned-cart emails for eligible carts (3–30 days old) ──
+  try {
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    // Find carts that are about to be deleted (past cutoff) AND are in the 3–30 day window
+    // Also find carts in the 3–30 day window that aren't yet expired (for future-proofing)
+    const staleCarts = await db
+      .select({
+        cartId: shoppingCarts.id,
+        customerId: shoppingCarts.customerId,
+        lastActivityAt: shoppingCarts.lastActivityAt,
+      })
+      .from(shoppingCarts)
+      .where(
+        and(
+          sql`${shoppingCarts.lastActivityAt} < ${threeDaysAgo}`,
+          sql`${shoppingCarts.lastActivityAt} >= ${thirtyDaysAgo}`,
+          sql`${shoppingCarts.customerId} IS NOT NULL`,
+        ),
+      );
+
+    if (staleCarts.length > 0) {
+      const { sendAbandonedCartEmail } = await import("../email.js");
+      const { customers: customersTable } = await import("../schema.js");
+
+      for (const cart of staleCarts) {
+        try {
+          // Count items in this cart
+          const [countResult] = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(shoppingCartItems)
+            .where(eq(shoppingCartItems.cartId, cart.cartId));
+
+          const itemCount = countResult?.count ?? 0;
+          if (itemCount === 0) continue; // Skip empty carts
+
+          // Look up the customer's email and name
+          const [customer] = await db
+            .select({
+              email: customersTable.email,
+              firstName: customersTable.firstName,
+            })
+            .from(customersTable)
+            .where(eq(customersTable.id, cart.customerId))
+            .limit(1);
+
+          if (customer?.email) {
+            const name = customer.firstName || "there";
+            await sendAbandonedCartEmail(customer.email, name, itemCount);
+          }
+        } catch (emailError) {
+          console.error("[cart cleanup] Failed to send abandoned cart email for cart:", cart.cartId, emailError);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("[cart cleanup] Error during abandoned cart email phase:", error);
+    // Continue with deletion even if emails fail
+  }
+
+  // ── Delete expired carts ──
   const [result] = await db.execute(
     sql`DELETE FROM shopping_carts WHERE last_activity_at < ${cutoff}`,
   );

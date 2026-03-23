@@ -71,6 +71,7 @@ export const customers = mysqlTable("customers", {
   garageUserId: varchar("garage_user_id", { length: 36 }).unique(),
   profileImageUrl: text("profile_image_url"),
   emailVerified: boolean("email_verified").notNull().default(false),
+  storeCreditBalance: decimal("store_credit_balance", { precision: 10, scale: 2 }).notNull().default("0.00"),
   role: mysqlEnum("role", staffRoleValues),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -582,6 +583,31 @@ export const syncQueue = mysqlTable("sync_queue", {
   index("idx_sync_queue_next_retry").on(table.nextRetryAt),
 ]);
 
+// ==================== Customer Feature Tables (2) ====================
+
+export const savedVehicles = mysqlTable("saved_vehicles", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
+  customerId: varchar("customer_id", { length: 36 }).notNull().references(() => customers.id, { onDelete: "cascade" }),
+  make: varchar("make", { length: 100 }).notNull(),
+  model: varchar("model", { length: 100 }).notNull(),
+  year: int("year").notNull(),
+  nickname: text("nickname"),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_saved_vehicles_customer").on(table.customerId),
+]);
+
+export const wishlists = mysqlTable("wishlists", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
+  customerId: varchar("customer_id", { length: 36 }).notNull().references(() => customers.id, { onDelete: "cascade" }),
+  productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_wishlists_customer").on(table.customerId),
+  uniqueIndex("idx_wishlists_customer_product").on(table.customerId, table.productId),
+]);
+
 // ==================== Type Exports ====================
 
 // Core
@@ -665,3 +691,9 @@ export type SyncLog = typeof syncLog.$inferSelect;
 export type InsertSyncLog = typeof syncLog.$inferInsert;
 export type SyncQueue = typeof syncQueue.$inferSelect;
 export type InsertSyncQueue = typeof syncQueue.$inferInsert;
+
+// Customer Features
+export type SavedVehicle = typeof savedVehicles.$inferSelect;
+export type InsertSavedVehicle = typeof savedVehicles.$inferInsert;
+export type Wishlist = typeof wishlists.$inferSelect;
+export type InsertWishlist = typeof wishlists.$inferInsert;

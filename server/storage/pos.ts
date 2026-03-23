@@ -294,10 +294,12 @@ export async function createSale(params: {
   }>;
   paymentMethod: "cash" | "card" | "saved_card" | "split";
   cashReceived?: string;
+  cashAmount?: string;
+  cardAmount?: string;
   customerId?: string;
   processedBy: string;
 }): Promise<TransactionWithItems> {
-  const { sessionId, items, paymentMethod, cashReceived, customerId, processedBy } =
+  const { sessionId, items, paymentMethod, cashReceived, cashAmount, cardAmount, customerId, processedBy } =
     params;
 
   // 1. Verify session
@@ -407,6 +409,22 @@ export async function createSale(params: {
       changeGiven = (received - total).toFixed(2);
     }
 
+    // Split payment validation: cashAmount + cardAmount must cover total
+    let splitMetadata: string | null = null;
+    if (paymentMethod === "split") {
+      const cashAmt = parseFloat(cashAmount || "0");
+      const cardAmt = parseFloat(cardAmount || "0");
+      if (isNaN(cashAmt) || isNaN(cardAmt)) {
+        throw new Error("Split payment requires valid cashAmount and cardAmount");
+      }
+      if (cashAmt + cardAmt < total) {
+        throw new Error(
+          `Split payment amounts ($${cashAmt.toFixed(2)} cash + $${cardAmt.toFixed(2)} card = $${(cashAmt + cardAmt).toFixed(2)}) do not cover the total ($${total.toFixed(2)})`,
+        );
+      }
+      splitMetadata = JSON.stringify({ cashAmount: cashAmt.toFixed(2), cardAmount: cardAmt.toFixed(2) });
+    }
+
     await tx.insert(posTransactions).values({
       id: transactionId,
       transactionNumber,
@@ -419,8 +437,9 @@ export async function createSale(params: {
       discountAmount: totalDiscount.toFixed(2),
       total: total.toFixed(2),
       paymentMethod,
-      cashReceived: cashReceived ?? null,
+      cashReceived: paymentMethod === "split" ? (cashAmount ?? null) : (cashReceived ?? null),
       changeGiven,
+      cardTransactionId: paymentMethod === "split" ? splitMetadata : null,
       processedBy,
     });
 

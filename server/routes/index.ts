@@ -15,6 +15,8 @@ import posRoutes from "./pos.routes.js";
 import paymentMethodsRoutes from "./paymentMethods.routes.js";
 import staffRoutes from "./staff.routes.js";
 import contactRoutes from "./contact.routes.js";
+import vehiclesRoutes from "./vehicles.routes.js";
+import wishlistRoutes from "./wishlist.routes.js";
 
 export function registerRoutes(app: Express): void {
   app.use(authRoutes);
@@ -30,4 +32,6 @@ export function registerRoutes(app: Express): void {
   app.use(paymentMethodsRoutes);
   app.use(staffRoutes);
   app.use(contactRoutes);
+  app.use(vehiclesRoutes);
+  app.use(wishlistRoutes);
 }

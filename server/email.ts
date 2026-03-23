@@ -502,6 +502,35 @@ export async function sendContactConfirmationEmail(
 }
 
 // ---------------------------------------------------------------------------
+// Abandoned cart recovery
+// ---------------------------------------------------------------------------
+
+/**
+ * Sent to a customer who has items sitting in their cart (abandoned cart reminder).
+ */
+export async function sendAbandonedCartEmail(
+  customerEmail: string,
+  customerName: string,
+  cartItemCount: number,
+): Promise<boolean> {
+  const itemWord = cartItemCount === 1 ? "item" : "items";
+  const body = `
+    ${greeting(customerName)}
+    <p>You left <strong>${cartItemCount} ${itemWord}</strong> in your shopping cart at ${STORE_NAME}.</p>
+    <p>Parts can sell out quickly — don't miss out! Complete your order before your items are gone.</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${escapeHtml(process.env.BASE_URL || "https://parts.316-automotive.com")}/parts/cart"
+         style="display: inline-block; background: #1a1a2e; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: bold; font-size: 14px;">
+        Return to Your Cart
+      </a>
+    </div>
+    <p style="font-size: 13px; color: #666;">If you've already completed your purchase or no longer need these items, you can safely ignore this email.</p>`;
+
+  const subject = `You left ${cartItemCount} ${itemWord} in your cart`;
+  return sendEmail(customerEmail, subject, wrapInLayout("Don't forget your cart!", body));
+}
+
+// ---------------------------------------------------------------------------
 // Staff notification
 // ---------------------------------------------------------------------------
 

@@ -13,7 +13,7 @@ import { registerRoutes } from "./routes/index.js";
 import { cleanupStaleCarts } from "./storage/cart.js";
 import { cleanupExpiredPendingOrders } from "./storage/orders.js";
 import { startQueueProcessor } from "./sync/queueProcessor.js";
-import { resetStaleProcessingEvents } from "./storage/sync.js";
+import { resetStaleProcessingEvents, cleanupOldSyncRecords } from "./storage/sync.js";
 
 const app = express();
 const dev = process.env.NODE_ENV !== "production";
@@ -84,14 +84,31 @@ app.use("/api/store/auth/refresh", rateLimit({ windowMs: 60_000, max: 30, standa
 app.use("/api/store/checkout", checkoutLimiter);
 app.use("/api/store/", apiLimiter);
 
+// API version header — informs clients of current API version
+app.use("/api/store", (_req, res, next) => {
+  res.setHeader("X-API-Version", "1.0");
+  next();
+});
+
 // Health check
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "parts-store" });
+  res.json({ status: "ok", service: "parts-store", apiVersion: "1.0" });
 });
 
 // Root redirect → storefront
 app.get("/", (_req, res) => {
   res.redirect(301, "/parts");
+});
+
+// App version check endpoint (for mobile apps)
+app.get("/api/store/app/version", (_req, res) => {
+  res.json({
+    apiVersion: "1.0",
+    minAppVersion: "1.0.0",
+    latestAppVersion: "1.0.0",
+    forceUpdate: false,
+    message: null,
+  });
 });
 
 // Register API routes
@@ -132,7 +149,16 @@ function startCronJobs() {
   }).catch(() => {});
   startQueueProcessor(30_000);
 
-  console.log("[cron] Scheduled: expired order cleanup (15m), stale cart cleanup (24h), sync queue processor (30s)");
+  // Every 24 hours: clean up old completed sync records (>30 days)
+  setInterval(() => {
+    cleanupOldSyncRecords(30).then(({ queueDeleted, logDeleted }) => {
+      if (queueDeleted > 0 || logDeleted > 0) {
+        console.log(`[cron] Sync cleanup: ${queueDeleted} queue + ${logDeleted} log records removed`);
+      }
+    }).catch((e) => console.error("[cron] Sync cleanup error:", e));
+  }, 24 * 60 * 60 * 1000);
+
+  console.log("[cron] Scheduled: expired order cleanup (15m), stale cart cleanup (24h), sync queue processor (30s), sync cleanup (24h)");
 }
 
 // Process-level error handlers

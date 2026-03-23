@@ -186,6 +186,24 @@ export async function resetStaleProcessingEvents(): Promise<number> {
   return (result as unknown as { affectedRows?: number })?.affectedRows ?? 0;
 }
 
+/**
+ * Clean up old completed sync queue events and sync log entries.
+ * Deletes records older than the specified number of days.
+ */
+export async function cleanupOldSyncRecords(daysToKeep: number = 30): Promise<{ queueDeleted: number; logDeleted: number }> {
+  const cutoff = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000);
+  const queueResult = await db
+    .delete(syncQueue)
+    .where(and(eq(syncQueue.status, "completed"), lte(syncQueue.createdAt, cutoff)));
+  const logResult = await db
+    .delete(syncLog)
+    .where(lte(syncLog.createdAt, cutoff));
+  return {
+    queueDeleted: (queueResult as unknown as { affectedRows?: number })?.affectedRows ?? 0,
+    logDeleted: (logResult as unknown as { affectedRows?: number })?.affectedRows ?? 0,
+  };
+}
+
 // ─── Sync Log ─────────────────────────────────────────────
 
 /** Log a sync event (called after each sync attempt). */

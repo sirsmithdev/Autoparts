@@ -692,6 +692,11 @@ export async function markOrderPickedUp(
       updatedAt: new Date(),
     })
     .where(eq(onlineStoreOrders.id, orderId));
+
+  // Send pickup confirmation email
+  if (order.customerEmail) {
+    email.sendDeliveredEmail(order.customerEmail, order.customerName || "Customer", order.orderNumber).catch(() => {});
+  }
 }
 
 /** Update staff notes on an order. */

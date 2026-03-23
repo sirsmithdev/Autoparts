@@ -2,7 +2,7 @@
  * Customer storage module — registration, authentication, profile, refresh tokens.
  */
 
-import { eq, isNotNull, like } from "drizzle-orm";
+import { eq, isNotNull, like, sql } from "drizzle-orm";
 import { db } from "../db.js";
 import { customers, refreshTokens } from "../schema.js";
 import bcrypt from "bcrypt";
@@ -307,4 +307,50 @@ export async function searchByEmail(query: string): Promise<Customer[]> {
     .from(customers)
     .where(like(customers.email, `${query}%`))
     .limit(20);
+}
+
+// ─── Store Credit ────────────────────────────────────────
+
+/** Get the current store credit balance for a customer. */
+export async function getStoreCredit(customerId: string): Promise<string> {
+  const [result] = await db
+    .select({ balance: customers.storeCreditBalance })
+    .from(customers)
+    .where(eq(customers.id, customerId))
+    .limit(1);
+  return result?.balance ?? "0.00";
+}
+
+/** Add store credit to a customer's balance. */
+export async function addStoreCredit(
+  customerId: string,
+  amount: string,
+): Promise<void> {
+  const numAmount = parseFloat(amount);
+  if (isNaN(numAmount) || numAmount <= 0) {
+    throw new Error("Store credit amount must be a positive number");
+  }
+  await db.execute(
+    sql`UPDATE customers SET store_credit_balance = store_credit_balance + ${amount}, updated_at = NOW() WHERE id = ${customerId}`,
+  );
+}
+
+/** Deduct store credit from a customer's balance. Throws if insufficient. */
+export async function deductStoreCredit(
+  customerId: string,
+  amount: string,
+): Promise<void> {
+  const numAmount = parseFloat(amount);
+  if (isNaN(numAmount) || numAmount <= 0) {
+    throw new Error("Deduction amount must be a positive number");
+  }
+  const currentBalance = await getStoreCredit(customerId);
+  if (parseFloat(currentBalance) < numAmount) {
+    throw new Error(
+      `Insufficient store credit: balance is $${currentBalance}, tried to deduct $${amount}`,
+    );
+  }
+  await db.execute(
+    sql`UPDATE customers SET store_credit_balance = store_credit_balance - ${amount}, updated_at = NOW() WHERE id = ${customerId}`,
+  );
 }

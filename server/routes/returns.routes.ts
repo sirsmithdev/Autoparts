@@ -93,4 +93,54 @@ router.get("/api/store/returns/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// POST /api/store/returns/:id/tracking — Submit tracking number
+// ---------------------------------------------------------------------------
+
+const trackingSchema = z.object({
+  trackingNumber: z.string().min(1, "Tracking number is required"),
+});
+
+router.post(
+  "/api/store/returns/:id/tracking",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const body = trackingSchema.parse(req.body);
+      const ret = await returns.getReturn(String(req.params.id));
+      if (!ret) {
+        res.status(404).json({ message: "Return not found" });
+        return;
+      }
+      if (ret.customerId !== req.customer!.customerId) {
+        res
+          .status(403)
+          .json({ message: "You do not have access to this return" });
+        return;
+      }
+      if (ret.status !== "approved") {
+        res.status(400).json({
+          message: `Cannot submit tracking for return in "${ret.status}" status — must be "approved"`,
+        });
+        return;
+      }
+      await returns.markReturnShippedBack(
+        String(req.params.id),
+        body.trackingNumber,
+      );
+      res.json({ message: "Tracking number submitted and return marked as shipped back" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors[0].message });
+        return;
+      }
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to submit tracking number";
+      res.status(400).json({ message });
+    }
+  },
+);
+
 export default router;

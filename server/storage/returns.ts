@@ -22,6 +22,7 @@ import {
 } from "../schema.js";
 import { getStoreSettings } from "./settings.js";
 import { enqueueStockRestore } from "../sync/stockSync.js";
+import { addStoreCredit } from "./customers.js";
 import * as emailService from "../email.js";
 import { randomUUID } from "crypto";
 import { refundPayment } from "../payment/powertranz.js";
@@ -747,6 +748,12 @@ export async function storeCreditReturn(
       updatedAt: new Date(),
     })
     .where(eq(onlineStoreReturns.id, id));
+
+  // Credit the customer's store credit balance
+  const refundAmount = ret.refundAmount || "0.00";
+  if (parseFloat(refundAmount) > 0) {
+    await addStoreCredit(ret.customerId, refundAmount);
+  }
 }
 
 // ---------------------------------------------------------------------------

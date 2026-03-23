@@ -29,6 +29,13 @@
       "when": 1774268904491,
       "tag": "0003_add_pickup_code_and_address_coords",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1774272804133,
+      "tag": "0004_add_vehicles_wishlist_store_credit",
+      "breakpoints": true
     }
   ]
 }

@@ -81,6 +81,8 @@ router.post(
         items: req.body.items,
         paymentMethod: req.body.paymentMethod,
         cashReceived: req.body.cashReceived,
+        cashAmount: req.body.cashAmount,
+        cardAmount: req.body.cardAmount,
         customerId: req.body.customerId,
         processedBy: req.customer!.customerId,
       });
@@ -180,6 +182,61 @@ router.post(
       const message =
         error instanceof Error ? error.message : "Failed to refund transaction";
       res.status(400).json({ message });
+    }
+  },
+);
+
+// ==================== Receipts ====================
+
+router.get(
+  "/api/store/pos/transactions/:id/receipt",
+  authenticateToken,
+  requirePermission("pos:operate"),
+  async (req, res) => {
+    try {
+      const transaction = await pos.getTransaction(String(req.params.id));
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      const receipt = {
+        storeName: "316 Automotive Parts Store",
+        transactionNumber: transaction.transactionNumber,
+        transactionId: transaction.id,
+        type: transaction.type,
+        status: transaction.status,
+        date: transaction.createdAt,
+        items: transaction.items.map((item) => ({
+          productName: item.productName,
+          productNumber: item.productNumber,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discountPercent: item.discountPercent,
+          discountAmount: item.discountAmount,
+          lineTotal: item.lineTotal,
+        })),
+        subtotal: transaction.subtotal,
+        discountAmount: transaction.discountAmount,
+        taxAmount: transaction.taxAmount,
+        total: transaction.total,
+        paymentMethod: transaction.paymentMethod,
+        cashReceived: transaction.cashReceived,
+        changeGiven: transaction.changeGiven,
+        splitPayment:
+          transaction.paymentMethod === "split" && transaction.cardTransactionId
+            ? (() => {
+                try {
+                  return JSON.parse(transaction.cardTransactionId);
+                } catch {
+                  return null;
+                }
+              })()
+            : null,
+      };
+
+      res.json(receipt);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get receipt" });
     }
   },
 );
