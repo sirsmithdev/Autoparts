@@ -40,13 +40,13 @@ interface Compatibility {
   engineType: string;
 }
 
-interface ProductDetail {
+interface ProductData {
   id: string;
   name: string;
   partNumber: string;
   barcode: string | null;
   salePrice: string;
-  stockQuantity: number;
+  quantity: number;
   category: string | null;
   manufacturer: string | null;
   condition: string;
@@ -55,7 +55,11 @@ interface ProductDetail {
   isOversized: boolean;
   isFeatured: boolean;
   isActive: boolean;
-  images: ProductImage[];
+}
+
+interface ProductDetail {
+  product: ProductData;
+  images: Array<{ id: string; imageUrl: string; sortOrder: number; altText?: string; isPrimary: boolean }>;
   numbers: PartNumber[];
   compatibility: Compatibility[];
 }
@@ -100,26 +104,27 @@ export default function AdminEditProductPage() {
   });
 
   // Populate form when product loads
+  const p = product?.product;
   useEffect(() => {
-    if (product) {
+    if (p) {
       setForm({
-        name: product.name,
-        partNumber: product.partNumber,
-        barcode: product.barcode || "",
-        salePrice: product.salePrice,
-        category: product.category || "",
-        manufacturer: product.manufacturer || "",
-        condition: product.condition || "new",
-        description: product.description || "",
-        weight: product.weight || "",
-        isOversized: product.isOversized,
-        isFeatured: product.isFeatured,
-        isActive: product.isActive,
+        name: p.name,
+        partNumber: p.partNumber,
+        barcode: p.barcode || "",
+        salePrice: p.salePrice,
+        category: p.category || "",
+        manufacturer: p.manufacturer || "",
+        condition: p.condition || "new",
+        description: p.description || "",
+        weight: p.weight || "",
+        isOversized: p.isOversized,
+        isFeatured: p.isFeatured,
+        isActive: p.isActive,
       });
-      setNumbers(product.numbers || []);
-      setCompatibility(product.compatibility || []);
+      setNumbers(product?.numbers || []);
+      setCompatibility(product?.compatibility || []);
     }
-  }, [product]);
+  }, [product, p]);
 
   // Mutations
   const updateMutation = useMutation({
@@ -277,7 +282,7 @@ export default function AdminEditProductPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold">Edit Product</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{product.name}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{p?.name}</p>
           </div>
         </div>
         <Link
@@ -465,7 +470,7 @@ export default function AdminEditProductPage() {
             {product.images.map((img) => (
               <div key={img.id} className="relative group">
                 <img
-                  src={img.url}
+                  src={img.imageUrl}
                   alt=""
                   className="w-full aspect-square rounded-lg object-cover border"
                 />

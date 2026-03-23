@@ -37,12 +37,12 @@ export default function AdminNewProductPage() {
 
   const createMutation = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
-      api<{ product: { id: string } }>("/api/store/admin/products", {
+      api<{ id: string }>("/api/store/admin/products", {
         method: "POST",
         body: JSON.stringify(body),
       }),
     onSuccess: (data) => {
-      router.push(`/admin/products/${data.product.id}`);
+      router.push(`/admin/products/${data.id}`);
     },
     onError: (err: Error) => {
       setError(err.message);
