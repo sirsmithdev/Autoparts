@@ -5,6 +5,8 @@ const dev = process.env.NODE_ENV !== "production";
 const nextConfig: NextConfig = {
   // In production, pages are served under /parts by Express custom server
   basePath: dev ? "" : "/parts",
+  // Silence "multiple lockfiles" warning — root is the monorepo parent
+  outputFileTracingRoot: dev ? undefined : "/app",
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "nyc3.digitaloceanspaces.com" },
