@@ -8,7 +8,6 @@ import { StockBadge } from "@/components/StockBadge";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { useState } from "react";
 import { Trash2, ShoppingCart, Minus, Plus, Package, Truck } from "lucide-react";
 
 const FREE_SHIPPING_THRESHOLD = 15000;
@@ -59,8 +58,6 @@ function CartTable({
   onUpdate: (id: string, qty: number) => void;
   onRemove: (id: string) => void;
 }) {
-  const [coupon, setCoupon] = useState("");
-
   return (
     <div className="space-y-4">
       {/* Table */}
@@ -130,19 +127,9 @@ function CartTable({
         </div>
       </div>
 
-      {/* Coupon + actions */}
+      {/* Actions */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="flex gap-2 flex-1">
-          <input
-            type="text"
-            placeholder="Coupon code"
-            value={coupon}
-            onChange={(e) => setCoupon(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring w-48"
-          />
-          <button className="px-4 py-2 bg-foreground text-white rounded-md text-sm font-medium hover:bg-foreground/90 transition-colors">
-            Apply Coupon
-          </button>
         </div>
       </div>
     </div>

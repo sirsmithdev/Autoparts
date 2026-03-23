@@ -129,7 +129,7 @@ function LoginForm() {
             {mode === "store" && (
               <div className="flex items-center justify-between text-sm">
                 <div />
-                <Link href="#" className="text-primary hover:underline text-sm">
+                <Link href="/forgot-password" className="text-primary hover:underline text-sm">
                   Forgot your password?
                 </Link>
               </div>

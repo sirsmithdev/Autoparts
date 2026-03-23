@@ -3,6 +3,7 @@ import { StockBadge } from "@/components/StockBadge";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { formatPrice } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import DOMPurify from "dompurify";
 import { useGuestCart } from "@/hooks/useCart";
 import { useVehicleSelection, hasVehicleSelected } from "@/hooks/useVehicleSelection";
 import { useQueryClient } from "@tanstack/react-query";
@@ -283,7 +284,7 @@ export function PartDetailClient({ detail }: { detail: PartDetail }) {
             {activeTab === "description" && (
               <div className="space-y-4">
                 {part.longDescription && (
-                  <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: part.longDescription }} />
+                  <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(part.longDescription, { ALLOWED_TAGS: ["b", "i", "em", "strong", "p", "br", "ul", "ol", "li", "a", "h2", "h3", "h4", "table", "thead", "tbody", "tr", "th", "td", "span", "div"], ALLOWED_ATTR: ["href", "target", "rel", "class"] }) }} />
                 )}
                 {!part.longDescription && part.description && (
                   <p className="text-muted-foreground">{part.description}</p>

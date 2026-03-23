@@ -8,10 +8,11 @@ import {
   generateAccessToken,
   generateRefreshToken,
   generateEmailVerifyToken,
+  generatePasswordResetToken,
   verifyToken,
   isAdminEmail,
 } from "../auth.js";
-import { sendVerificationEmail, sendWelcomeEmail } from "../email.js";
+import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } from "../email.js";
 import * as customerStore from "../storage/customers.js";
 import type { Customer } from "../schema.js";
 
@@ -521,5 +522,64 @@ router.post(
     }
   },
 );
+
+// ─── POST /api/store/auth/forgot-password ────────────────
+
+router.post("/api/store/auth/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body as { email?: string };
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    // Always return success to prevent email enumeration
+    const customer = await customerStore.findByEmail(email);
+    if (customer && customer.isActive) {
+      const token = generatePasswordResetToken({ id: customer.id, email: customer.email });
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+      const resetUrl = `${baseUrl}/parts/reset-password?token=${token}`;
+      sendPasswordResetEmail(customer.email, customer.firstName || "there", resetUrl).catch((err) =>
+        console.error("Failed to send password reset email:", err),
+      );
+    }
+
+    res.json({ message: "If an account with that email exists, a reset link has been sent." });
+  } catch (error) {
+    console.error("Forgot password failed:", error);
+    res.status(500).json({ message: "Failed to process password reset request" });
+  }
+});
+
+// ─── POST /api/store/auth/reset-password ─────────────────
+
+router.post("/api/store/auth/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body as { token?: string; newPassword?: string };
+    if (!token) return res.status(400).json({ message: "Reset token is required" });
+    if (!newPassword || newPassword.length < 8) return res.status(400).json({ message: "Password must be at least 8 characters" });
+
+    let payload;
+    try {
+      payload = verifyToken(token);
+    } catch {
+      return res.status(400).json({ message: "Invalid or expired reset link" });
+    }
+
+    if (payload.type !== "password_reset") {
+      return res.status(400).json({ message: "Invalid token type" });
+    }
+
+    const customer = await customerStore.findById(payload.customerId);
+    if (!customer || !customer.isActive) {
+      return res.status(400).json({ message: "Account not found or inactive" });
+    }
+
+    await customerStore.setPassword(customer.id, newPassword);
+    await customerStore.revokeAllRefreshTokens(customer.id);
+
+    res.json({ message: "Password has been reset. Please sign in with your new password." });
+  } catch (error) {
+    console.error("Reset password failed:", error);
+    res.status(500).json({ message: "Failed to reset password" });
+  }
+});
 
 export default router;

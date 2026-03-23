@@ -174,6 +174,18 @@ export async function getQueueStats(): Promise<{
   };
 }
 
+/**
+ * Reset any events stuck in "processing" status back to "pending".
+ * Called on server startup to recover from crash/restart.
+ */
+export async function resetStaleProcessingEvents(): Promise<number> {
+  const result = await db
+    .update(syncQueue)
+    .set({ status: "pending" })
+    .where(eq(syncQueue.status, "processing"));
+  return (result as unknown as { affectedRows?: number })?.affectedRows ?? 0;
+}
+
 // ─── Sync Log ─────────────────────────────────────────────
 
 /** Log a sync event (called after each sync attempt). */

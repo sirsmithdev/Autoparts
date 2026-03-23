@@ -8,17 +8,31 @@ import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { registerRoutes } from "./routes/index.js";
 import { cleanupStaleCarts } from "./storage/cart.js";
 import { cleanupExpiredPendingOrders } from "./storage/orders.js";
 import { startQueueProcessor } from "./sync/queueProcessor.js";
+import { resetStaleProcessingEvents } from "./storage/sync.js";
 
 const app = express();
 const dev = process.env.NODE_ENV !== "production";
 const port = parseInt(process.env.PORT || process.env.PARTS_STORE_API_PORT || "5002", 10);
 
 // Security headers
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://maps.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", "https://maps.googleapis.com", "https://accounts.google.com"],
+      frameSrc: ["'self'", "https://payments.powertranz.com"],
+    },
+  },
+}));
 
 // Middleware
 app.use(cors({
@@ -35,6 +49,40 @@ app.use(express.json({
   },
 }));
 app.use(express.urlencoded({ extended: true }));
+
+// Trust proxy for rate limiting behind DigitalOcean load balancer
+if (!dev) app.set("trust proxy", 1);
+
+// Rate limiting
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 attempts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many attempts. Please try again later." },
+});
+const checkoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many checkout attempts. Please try again later." },
+});
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 120, // 120 requests per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests. Please slow down." },
+});
+
+app.use("/api/store/auth/login", authLimiter);
+app.use("/api/store/auth/register", authLimiter);
+app.use("/api/store/auth/316-login", authLimiter);
+app.use("/api/store/auth/forgot-password", rateLimit({ windowMs: 15 * 60_000, max: 5, standardHeaders: true, legacyHeaders: false, message: { message: "Too many password reset requests. Try again later." } }));
+app.use("/api/store/auth/refresh", rateLimit({ windowMs: 60_000, max: 30, standardHeaders: true, legacyHeaders: false }));
+app.use("/api/store/checkout", checkoutLimiter);
+app.use("/api/store/", apiLimiter);
 
 // Health check
 app.get("/health", (_req, res) => {
@@ -78,6 +126,10 @@ function startCronJobs() {
   }, 24 * 60 * 60 * 1000);
 
   // Every 30 seconds: process outbound sync queue (stock changes → garage app)
+  // Reset any sync events stuck in "processing" from a previous crash
+  resetStaleProcessingEvents().then((count) => {
+    if (count > 0) console.log(`[sync] Reset ${count} stale processing event(s) on startup`);
+  }).catch(() => {});
   startQueueProcessor(30_000);
 
   console.log("[cron] Scheduled: expired order cleanup (15m), stale cart cleanup (24h), sync queue processor (30s)");

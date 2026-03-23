@@ -98,11 +98,6 @@ export default function CheckoutPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Cart", href: "/cart" }, { label: "Checkout" }]} />
 
-      {/* Coupon toggle */}
-      <div className="border rounded-md p-3 text-sm text-muted-foreground">
-        Have a coupon? <button className="text-primary hover:underline font-medium">Click here to enter your code</button>
-      </div>
-
       <div className="grid lg:grid-cols-3 gap-8">
       {/* Left column - forms */}
       <div className="lg:col-span-2 space-y-8">

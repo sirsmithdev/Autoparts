@@ -13,7 +13,7 @@ export interface TokenPayload {
   email: string;
   isAdmin: boolean;
   role: string | null;
-  type: "access" | "refresh" | "email_verify";
+  type: "access" | "refresh" | "email_verify" | "password_reset";
 }
 
 function getJwtSecret(): string {
@@ -79,6 +79,21 @@ export function generateEmailVerifyToken(customer: {
     type: "email_verify",
   };
   return jwt.sign(payload, getJwtSecret(), { expiresIn: "24h" });
+}
+
+/** Creates a 1-hour password reset token. */
+export function generatePasswordResetToken(customer: {
+  id: string;
+  email: string;
+}): string {
+  const payload: TokenPayload = {
+    customerId: customer.id,
+    email: customer.email,
+    isAdmin: false,
+    role: null,
+    type: "password_reset",
+  };
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: "1h" });
 }
 
 /** Checks if the given email is in the STORE_ADMIN_EMAILS env var (comma-separated). */

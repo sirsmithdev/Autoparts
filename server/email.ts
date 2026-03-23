@@ -332,6 +332,26 @@ export async function sendOrderCancelledEmail(
   return sendEmail(customerEmail, subject, wrapInLayout(subject, body));
 }
 
+/**
+ * Sent when a customer requests a password reset.
+ */
+export async function sendPasswordResetEmail(
+  customerEmail: string,
+  customerName: string,
+  resetUrl: string,
+): Promise<boolean> {
+  const body = `
+    ${greeting(customerName)}
+    <p>We received a request to reset your password. Click the button below to choose a new password:</p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${escapeHtml(resetUrl)}" style="display:inline-block;padding:12px 32px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;">Reset Password</a>
+    </p>
+    <p style="font-size:12px;color:#888;">This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>`;
+
+  const subject = "Reset your password";
+  return sendEmail(customerEmail, subject, wrapInLayout(subject, body));
+}
+
 // ---------------------------------------------------------------------------
 // Return lifecycle emails
 // ---------------------------------------------------------------------------
@@ -372,6 +392,42 @@ export async function sendRefundProcessedEmail(
 
   const subject = `Your refund of $${refundAmount} has been processed`;
   return sendEmail(customerEmail, subject, wrapInLayout("Your refund has been processed", body));
+}
+
+/**
+ * Sent when a customer submits a return request.
+ */
+export async function sendReturnSubmittedEmail(
+  customerEmail: string,
+  customerName: string,
+  orderNumber: string,
+): Promise<boolean> {
+  const body = `
+    ${greeting(customerName)}
+    <p>We've received your return request for order <strong>${escapeHtml(orderNumber)}</strong>.</p>
+    <p>Our team will review it and get back to you within 1–2 business days. You can check the status of your return from your account.</p>`;
+
+  const subject = "Return request received";
+  return sendEmail(customerEmail, subject, wrapInLayout(subject, body));
+}
+
+/**
+ * Sent when a return request is rejected by staff.
+ */
+export async function sendReturnRejectedEmail(
+  customerEmail: string,
+  customerName: string,
+  returnNumber: string,
+  reason: string,
+): Promise<boolean> {
+  const body = `
+    ${greeting(customerName)}
+    <p>Your return request <strong>${escapeHtml(returnNumber)}</strong> has been reviewed and unfortunately cannot be approved.</p>
+    <p><strong>Reason:</strong> ${escapeHtml(reason)}</p>
+    <p>If you have questions, please contact our support team.</p>`;
+
+  const subject = "Return request update";
+  return sendEmail(customerEmail, subject, wrapInLayout(subject, body));
 }
 
 // ---------------------------------------------------------------------------

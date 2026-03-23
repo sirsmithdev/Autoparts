@@ -22,8 +22,8 @@ import {
 } from "../schema.js";
 import { getStoreSettings } from "./settings.js";
 import { enqueueStockRestore } from "../sync/stockSync.js";
+import * as emailService from "../email.js";
 import { randomUUID } from "crypto";
-import * as email from "../email.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -282,6 +282,11 @@ export async function createReturnRequest(params: {
     return { ...returnRow, items: returnItems };
   });
 
+  // Send return submission confirmation email
+  if (order.customerEmail) {
+    emailService.sendReturnSubmittedEmail(order.customerEmail, order.customerName || "Customer", order.orderNumber).catch(() => {});
+  }
+
   return result;
 }
 
@@ -414,7 +419,7 @@ export async function approveReturn(
   const [order] = await db.select({ customerEmail: onlineStoreOrders.customerEmail, customerName: onlineStoreOrders.customerName })
     .from(onlineStoreOrders).where(eq(onlineStoreOrders.id, ret.orderId)).limit(1);
   if (order?.customerEmail) {
-    email.sendReturnApprovedEmail(order.customerEmail, order.customerName || "Customer", ret.returnNumber).catch(() => {});
+    emailService.sendReturnApprovedEmail(order.customerEmail, order.customerName || "Customer", ret.returnNumber).catch(() => {});
   }
 }
 
@@ -448,6 +453,12 @@ export async function rejectReturn(
       updatedAt: new Date(),
     })
     .where(eq(onlineStoreReturns.id, id));
+
+  // Send rejection email
+  const [order] = await db.select().from(onlineStoreOrders).where(eq(onlineStoreOrders.id, ret.orderId)).limit(1);
+  if (order?.customerEmail) {
+    emailService.sendReturnRejectedEmail(order.customerEmail, order.customerName || "Customer", ret.returnNumber, reason).catch(() => {});
+  }
 }
 
 /**
@@ -648,7 +659,7 @@ export async function refundReturn(id: string): Promise<void> {
   const [order] = await db.select({ customerEmail: onlineStoreOrders.customerEmail, customerName: onlineStoreOrders.customerName })
     .from(onlineStoreOrders).where(eq(onlineStoreOrders.id, ret.orderId)).limit(1);
   if (order?.customerEmail && ret.refundAmount) {
-    email.sendRefundProcessedEmail(order.customerEmail, order.customerName || "Customer", ret.returnNumber, ret.refundAmount).catch(() => {});
+    emailService.sendRefundProcessedEmail(order.customerEmail, order.customerName || "Customer", ret.returnNumber, ret.refundAmount).catch(() => {});
   }
 }
 

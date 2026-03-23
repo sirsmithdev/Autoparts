@@ -5,7 +5,7 @@ import {
   Disc3, Cog, Zap, ArrowUpDown, Car, Thermometer,
   Settings2, Filter, Wind, Package, Truck, Shield, RotateCcw,
   Star, Users, CheckCircle2, Phone, Headphones, ChevronRight,
-  Lightbulb, Gauge, Wrench, Clock, BadgePercent,
+  Lightbulb, Gauge, Wrench, Clock,
 } from "lucide-react";
 
 interface CatalogPart {
@@ -282,23 +282,20 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ═══ DISCOUNT BANNER ═══ */}
+      {/* ═══ PROMO BANNER ═══ */}
       <section className="bg-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <span className="text-3xl md:text-4xl font-bold text-white">-35%</span>
+              <Truck className="h-8 w-8 text-white" />
               <div>
-                <p className="text-sm font-semibold text-white">First-Time Customer Discount</p>
-                <p className="text-xs text-white/70">Use discount code in checkout page.</p>
+                <p className="text-sm font-semibold text-white">Free Island-Wide Delivery</p>
+                <p className="text-xs text-white/70">On orders over $15,000 JMD.</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="px-5 py-2.5 bg-white/15 border border-white/30 rounded-md">
-                <span className="text-sm font-mono font-bold text-white tracking-wider">PARTS316</span>
-              </div>
-              <BadgePercent className="h-6 w-6 text-white/60" />
-            </div>
+            <Link href="/search" className="px-5 py-2.5 bg-white/15 border border-white/30 rounded-md text-sm font-semibold text-white hover:bg-white/25 transition-colors">
+              Shop Now
+            </Link>
           </div>
         </div>
       </section>
