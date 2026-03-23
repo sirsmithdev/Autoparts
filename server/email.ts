@@ -431,6 +431,77 @@ export async function sendReturnRejectedEmail(
 }
 
 // ---------------------------------------------------------------------------
+// Contact form emails
+// ---------------------------------------------------------------------------
+
+/**
+ * Sent to all addresses in STORE_ADMIN_EMAILS when someone submits the contact form.
+ */
+export async function sendContactFormEmail(params: {
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+}): Promise<boolean> {
+  const adminEmails = (process.env.STORE_ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+
+  if (adminEmails.length === 0) {
+    console.warn("[email] STORE_ADMIN_EMAILS not set, skipping contact form notification");
+    return false;
+  }
+
+  const phoneRow = params.phone
+    ? `<tr><td style="padding: 6px 12px 6px 0; font-weight: bold;">Phone</td><td style="padding: 6px 0;">${escapeHtml(params.phone)}</td></tr>`
+    : "";
+
+  const body = `
+    <p>A new contact form submission has been received.</p>
+    <table style="margin: 16px 0; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 6px 12px 6px 0; font-weight: bold;">Name</td>
+        <td style="padding: 6px 0;">${escapeHtml(params.name)}</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 12px 6px 0; font-weight: bold;">Email</td>
+        <td style="padding: 6px 0;"><a href="mailto:${escapeHtml(params.email)}">${escapeHtml(params.email)}</a></td>
+      </tr>
+      ${phoneRow}
+      <tr>
+        <td style="padding: 6px 12px 6px 0; font-weight: bold;">Subject</td>
+        <td style="padding: 6px 0;">${escapeHtml(params.subject)}</td>
+      </tr>
+    </table>
+    <div style="margin: 16px 0; padding: 16px; background: #f5f5f5; border-radius: 6px;">
+      <p style="margin: 0; white-space: pre-wrap;">${escapeHtml(params.message)}</p>
+    </div>
+    <p>You can reply directly to this customer at <a href="mailto:${escapeHtml(params.email)}">${escapeHtml(params.email)}</a>.</p>`;
+
+  const subject = `Contact form: ${params.subject}`;
+  return sendEmail(adminEmails, subject, wrapInLayout(subject, body));
+}
+
+/**
+ * Confirmation email sent to the customer after they submit the contact form.
+ */
+export async function sendContactConfirmationEmail(
+  customerEmail: string,
+  customerName: string,
+  subject: string,
+): Promise<boolean> {
+  const body = `
+    ${greeting(customerName)}
+    <p>Thank you for contacting ${STORE_NAME}. We've received your message regarding <strong>"${escapeHtml(subject)}"</strong>.</p>
+    <p>Our team will review your inquiry and get back to you within 1-2 business days.</p>
+    <p>If your matter is urgent, you can reach us directly by phone.</p>`;
+
+  return sendEmail(customerEmail, "We received your message", wrapInLayout("We received your message", body));
+}
+
+// ---------------------------------------------------------------------------
 // Staff notification
 // ---------------------------------------------------------------------------
 

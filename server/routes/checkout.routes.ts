@@ -10,6 +10,7 @@ import { z } from "zod";
 import { authenticateToken } from "../middleware.js";
 import * as orders from "../storage/orders.js";
 import * as pm from "../storage/paymentMethods.js";
+import * as customerStore from "../storage/customers.js";
 import {
   initiateSPIAuthWithCard,
   initiateSPIAuthWithToken,
@@ -46,6 +47,14 @@ const checkoutBodySchema = z.object({
 
 router.post("/api/store/checkout", authenticateToken, async (req, res) => {
   try {
+    // Verify email is confirmed before allowing checkout
+    const customer = await customerStore.findById(req.customer!.customerId);
+    if (!customer || customer.emailVerified === false) {
+      return res.status(403).json({
+        message: "Please verify your email before placing an order. Check your inbox for the verification link.",
+      });
+    }
+
     const body = checkoutBodySchema.parse(req.body);
 
     // 1. Create pending order (reserves stock, clears cart)

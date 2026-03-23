@@ -11,6 +11,7 @@ import {
   productNumbers,
   productCompatibility,
   productImages,
+  productBinAssignments,
 } from "../schema.js";
 import { validateSyncApiKey } from "../middleware.js";
 import { logSyncEvent } from "../storage/sync.js";
@@ -377,10 +378,33 @@ router.post("/api/sync/stock", async (req, res) => {
         continue;
       }
 
+      // Update product quantity
       await db
         .update(products)
         .set({ quantity, lastSyncedAt: new Date() })
         .where(eq(products.id, existing.id));
+
+      // Reconcile bin assignments: if bins exist, scale them proportionally
+      // to match the new total quantity (prevents bin drift from #36 audit)
+      const binRows = await db
+        .select({ id: productBinAssignments.id, quantity: productBinAssignments.quantity })
+        .from(productBinAssignments)
+        .where(eq(productBinAssignments.productId, existing.id));
+      if (binRows.length > 0) {
+        const currentBinTotal = binRows.reduce((sum, b) => sum + b.quantity, 0);
+        if (currentBinTotal > 0 && currentBinTotal !== quantity) {
+          const ratio = quantity / currentBinTotal;
+          let distributed = 0;
+          for (let i = 0; i < binRows.length; i++) {
+            const isLast = i === binRows.length - 1;
+            const newQty = isLast ? quantity - distributed : Math.round(binRows[i].quantity * ratio);
+            await db.update(productBinAssignments)
+              .set({ quantity: Math.max(0, newQty), updatedAt: new Date() })
+              .where(eq(productBinAssignments.id, binRows[i].id));
+            distributed += newQty;
+          }
+        }
+      }
 
       updated++;
     }

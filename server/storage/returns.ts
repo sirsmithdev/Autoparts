@@ -24,6 +24,7 @@ import { getStoreSettings } from "./settings.js";
 import { enqueueStockRestore } from "../sync/stockSync.js";
 import * as emailService from "../email.js";
 import { randomUUID } from "crypto";
+import { refundPayment } from "../payment/powertranz.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -645,6 +646,31 @@ export async function refundReturn(id: string): Promise<void> {
     }
   }
 
+  // Process refund via payment gateway if the order was paid by card
+  const [order] = await db
+    .select({
+      paymentTransactionId: onlineStoreOrders.paymentTransactionId,
+      customerEmail: onlineStoreOrders.customerEmail,
+      customerName: onlineStoreOrders.customerName,
+    })
+    .from(onlineStoreOrders)
+    .where(eq(onlineStoreOrders.id, ret.orderId))
+    .limit(1);
+
+  if (order?.paymentTransactionId) {
+    const refundAmount = parseFloat(ret.refundAmount || "0");
+    const refundResult = await refundPayment({
+      originalTransactionId: order.paymentTransactionId,
+      amount: refundAmount,
+      currency: "JMD",
+    });
+    if (!refundResult.success) {
+      throw new Error(
+        `Payment gateway refund failed: ${refundResult.error || "Unknown error"}`,
+      );
+    }
+  }
+
   await db
     .update(onlineStoreReturns)
     .set({
@@ -656,8 +682,6 @@ export async function refundReturn(id: string): Promise<void> {
     .where(eq(onlineStoreReturns.id, id));
 
   // Send refund processed email (best-effort, never block)
-  const [order] = await db.select({ customerEmail: onlineStoreOrders.customerEmail, customerName: onlineStoreOrders.customerName })
-    .from(onlineStoreOrders).where(eq(onlineStoreOrders.id, ret.orderId)).limit(1);
   if (order?.customerEmail && ret.refundAmount) {
     emailService.sendRefundProcessedEmail(order.customerEmail, order.customerName || "Customer", ret.returnNumber, ret.refundAmount).catch(() => {});
   }
