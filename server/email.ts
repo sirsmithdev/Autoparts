@@ -280,13 +280,55 @@ export async function sendReadyForPickupEmail(
   customerEmail: string,
   customerName: string,
   orderNumber: string,
+  pickupCode?: string,
 ): Promise<boolean> {
+  let qrSection = "";
+  if (pickupCode) {
+    try {
+      const QRCode = (await import("qrcode")).default;
+      const qrDataUrl = await QRCode.toDataURL(pickupCode, { width: 200, margin: 2 });
+      qrSection = `
+        <div style="text-align:center;margin:20px 0;padding:20px;background:#f8f9fa;border-radius:8px;">
+          <p style="margin:0 0 10px;font-size:14px;color:#666;">Your pickup code:</p>
+          <p style="margin:0 0 15px;font-size:28px;font-weight:bold;letter-spacing:4px;color:#1a1a2e;">${escapeHtml(pickupCode)}</p>
+          <img src="${qrDataUrl}" alt="Pickup QR Code" width="200" height="200" style="display:block;margin:0 auto;" />
+          <p style="margin:10px 0 0;font-size:12px;color:#999;">Show this QR code at the pickup counter</p>
+        </div>`;
+    } catch {
+      qrSection = `
+        <div style="text-align:center;margin:20px 0;padding:20px;background:#f8f9fa;border-radius:8px;">
+          <p style="margin:0 0 10px;font-size:14px;color:#666;">Your pickup code:</p>
+          <p style="margin:0;font-size:28px;font-weight:bold;letter-spacing:4px;color:#1a1a2e;">${escapeHtml(pickupCode)}</p>
+        </div>`;
+    }
+  }
+
   const body = `
     ${greeting(customerName)}
     <p>Your order <strong>${escapeHtml(orderNumber)}</strong> is packed and ready to collect from our store.</p>
+    ${qrSection}
     <p>Please bring a valid ID when picking up your order.</p>`;
 
   const subject = "Your order is ready to collect";
+  return sendEmail(customerEmail, subject, wrapInLayout(subject, body));
+}
+
+/**
+ * Sent when an order is cancelled (by staff or system).
+ */
+export async function sendOrderCancelledEmail(
+  customerEmail: string,
+  customerName: string,
+  orderNumber: string,
+  reason: string,
+): Promise<boolean> {
+  const body = `
+    ${greeting(customerName)}
+    <p>Your order <strong>${escapeHtml(orderNumber)}</strong> has been cancelled.</p>
+    <p><strong>Reason:</strong> ${escapeHtml(reason)}</p>
+    <p>If you believe this was an error, please contact us. Any charges will be refunded to your original payment method.</p>`;
+
+  const subject = `Order ${orderNumber} cancelled`;
   return sendEmail(customerEmail, subject, wrapInLayout(subject, body));
 }
 

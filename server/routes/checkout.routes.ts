@@ -321,7 +321,10 @@ router.post("/api/store/orders/:id/retry-payment", authenticateToken, async (req
 function buildRedirectPage(path: string, errorMessage: string | null): string {
   // The 3DS iframe needs to redirect the parent window to the result page.
   // We use postMessage so the React app can handle the redirect.
-  const payload = JSON.stringify({ type: "payment-callback", path, error: errorMessage });
+  // In production, Next.js pages are served under /parts basePath
+  const prefix = process.env.NODE_ENV === "production" ? "/parts" : "";
+  const fullPath = `${prefix}${path}`;
+  const payload = JSON.stringify({ type: "payment-callback", path: fullPath, error: errorMessage });
   return `<!DOCTYPE html>
 <html>
 <head><title>Processing payment...</title></head>
@@ -332,7 +335,7 @@ function buildRedirectPage(path: string, errorMessage: string | null): string {
       window.parent.postMessage(${JSON.stringify(payload)}, '*');
     } catch (e) {
       // Fallback: redirect in current window
-      window.location.href = '${path}';
+      window.location.href = '${fullPath}';
     }
   </script>
 </body>

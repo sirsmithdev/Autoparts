@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 import {
   ShoppingCart, Package, RefreshCw, CheckCircle2, Loader2,
   Minus, Plus, Car, Info, ChevronDown, ChevronUp, AlertCircle,
-  Truck, RotateCcw, Headphones, Star,
+  Truck, RotateCcw, Headphones,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -150,16 +150,6 @@ export function PartDetailClient({ detail }: { detail: PartDetail }) {
             </Link>
           )}
           <h1 className="text-2xl lg:text-3xl font-bold leading-tight">{part.name}</h1>
-
-          {/* Star rating */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} className={`h-4 w-4 ${i <= 4 ? "fill-rating text-rating" : "fill-muted text-muted"}`} />
-              ))}
-            </div>
-            <span className="text-xs text-muted-foreground">4 reviews</span>
-          </div>
 
           {/* Part Numbers */}
           <div className="space-y-1">

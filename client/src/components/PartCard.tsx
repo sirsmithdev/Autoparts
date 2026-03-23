@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { StockBadge } from "./StockBadge";
 import { formatPrice } from "@/lib/utils";
-import { ShoppingCart, CheckCircle2, Star } from "lucide-react";
+import { ShoppingCart, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestCart } from "@/hooks/useCart";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,19 +20,6 @@ interface PartCardProps {
   stockStatus: string;
   condition?: string;
   vehicleFits?: boolean;
-}
-
-function StarRating() {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          className={`h-3 w-3 ${i <= 4 ? "fill-rating text-rating" : "fill-muted text-muted"}`}
-        />
-      ))}
-    </div>
-  );
 }
 
 export function PartCard({
@@ -120,9 +107,6 @@ export function PartCard({
         <h3 className="font-medium text-sm line-clamp-2 leading-snug group-hover:text-primary transition-colors">
           {name}
         </h3>
-
-        {/* Star rating */}
-        <StarRating />
 
         {/* Part number */}
         <p className="text-xs text-muted-foreground font-mono">{partNumber}</p>

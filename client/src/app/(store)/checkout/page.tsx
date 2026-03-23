@@ -11,6 +11,7 @@ import {
   Truck, MapPin, Store, ChevronRight, ShieldCheck, CreditCard,
   AlertCircle, Loader2, Package,
 } from "lucide-react";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 
 interface DeliveryZone { id: string; name: string; parishes: string[]; deliveryFee: string; oversizedSurcharge: string; estimatedDays: number }
 
@@ -180,12 +181,20 @@ export default function CheckoutPage() {
             </div>
             <div>
               <label className="text-sm font-medium block mb-1.5">Street Address</label>
-              <textarea
-                className="w-full border rounded-lg px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                rows={2}
+              <AddressAutocomplete
                 value={deliveryAddress}
-                onChange={e => setDeliveryAddress(e.target.value)}
-                placeholder="Full street address"
+                onChange={({ address, parish }) => {
+                  setDeliveryAddress(address);
+                  if (parish) {
+                    setDeliveryParish(parish);
+                    const matchedZone = zones.find(z =>
+                      (z.parishes as string[]).some(p => p.toLowerCase() === parish.toLowerCase())
+                    );
+                    if (matchedZone) setSelectedZoneId(matchedZone.id);
+                  }
+                }}
+                onRawChange={(val) => setDeliveryAddress(val)}
+                placeholder="Start typing your address..."
               />
             </div>
             <div>

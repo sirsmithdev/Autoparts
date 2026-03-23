@@ -134,9 +134,6 @@ export default async function HomePage() {
                     <Icon className="h-12 w-12 text-muted-foreground/30 group-hover:text-primary/40 transition-colors" />
                   </div>
                   <span className="text-sm font-semibold text-center">{cat}</span>
-                  <span className="text-[10px] text-muted-foreground mt-0.5">
-                    {Math.floor(Math.random() * 10) + 2} items
-                  </span>
                 </Link>
               );
             })}

@@ -109,19 +109,32 @@ router.post("/api/store/admin/orders/:id/deliver", authenticateToken, requirePer
 
 router.post("/api/store/admin/orders/:id/ready-for-pickup", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
-    await orders.markOrderReadyForPickup(String(req.params.id));
+    const { pickupCode } = await orders.markOrderReadyForPickup(String(req.params.id));
     const order = await orders.getOrder(String(req.params.id));
-    res.json(order);
+    res.json({ ...order, pickupCode });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update order";
     res.status(400).json({ message });
   }
 });
 
+// Verify a pickup code — staff scans QR or enters code manually
+router.post("/api/store/admin/orders/verify-pickup", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code || typeof code !== "string") return res.status(400).json({ message: "code is required" });
+    const order = await orders.findByPickupCode(code.toUpperCase().trim());
+    if (!order) return res.status(404).json({ message: "No order found with this pickup code" });
+    const full = await orders.getOrder(order.id);
+    res.json(full);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to verify pickup code" });
+  }
+});
+
 router.post("/api/store/admin/orders/:id/picked-up", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
-    const { pickedUpBy } = req.body;
-    if (!pickedUpBy) return res.status(400).json({ message: "pickedUpBy is required" });
+    const pickedUpBy = req.body.pickedUpBy || req.customer?.email || "staff";
     await orders.markOrderPickedUp(String(req.params.id), pickedUpBy);
     const order = await orders.getOrder(String(req.params.id));
     res.json(order);

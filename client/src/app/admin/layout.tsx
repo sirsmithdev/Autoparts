@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import {
   Package, RotateCcw, Settings, LogOut, ShoppingBag,
-  ChevronLeft, LayoutDashboard, User, Warehouse, ClipboardList, Users,
+  ChevronLeft, LayoutDashboard, User, Warehouse, ClipboardList, Users, QrCode,
 } from "lucide-react";
 
 const adminNav: Array<{ label: string; href: string; icon: typeof Package; permission: Permission }> = [
@@ -15,6 +15,7 @@ const adminNav: Array<{ label: string; href: string; icon: typeof Package; permi
   { label: "Returns", href: "/admin/returns", icon: RotateCcw, permission: "returns:read" },
   { label: "Warehouse", href: "/admin/warehouse", icon: Warehouse, permission: "warehouse:read" },
   { label: "Settings", href: "/admin/settings", icon: Settings, permission: "settings:read" },
+  { label: "Scan Pickup", href: "/admin/scan", icon: QrCode, permission: "orders:manage" },
   { label: "Staff", href: "/admin/staff", icon: Users, permission: "staff:manage" },
 ];
 

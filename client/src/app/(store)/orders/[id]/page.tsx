@@ -11,6 +11,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ArrowLeft, Truck, Store, MapPin, Package as PackageIcon, XCircle, RotateCcw, Copy, AlertCircle } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+
+function PickupQRCode({ code }: { code: string }) {
+  return <QRCodeSVG value={code} size={160} level="M" />;
+}
 
 const ORDER_STEPS = [
   { key: "placed", label: "Order Placed" },
@@ -32,7 +37,7 @@ export default function OrderDetailPage() {
   const { data: order, isLoading } = useQuery<{
     id: string; orderNumber: string; status: string; total: string; subtotal: string; taxAmount: string; deliveryFee: string;
     deliveryMethod: string; deliveryParish?: string; deliveryAddress?: string; trackingNumber?: string; createdAt: string;
-    placedAt?: string; deliveredAt?: string; pickupReadyAt?: string;
+    placedAt?: string; deliveredAt?: string; pickupReadyAt?: string; pickupCode?: string;
     items: Array<{ id: string; partId: string; partName: string; partNumber: string; quantity: number; unitPrice: string; lineTotal: string }>;
   }>({
     queryKey: ["my-order", id],
@@ -136,9 +141,18 @@ export default function OrderDetailPage() {
         </div>
       )}
       {order.pickupReadyAt && order.deliveryMethod === "pickup" && (
-        <div className="flex items-center gap-3 p-4 border border-green-200 rounded-lg bg-green-50">
-          <Store className="h-5 w-5 text-green-600 shrink-0" />
-          <p className="text-sm font-medium text-green-800">Your order is ready for pickup at 316 Automotive!</p>
+        <div className="border border-green-200 rounded-lg bg-green-50 p-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <Store className="h-5 w-5 text-green-600 shrink-0" />
+            <p className="text-sm font-medium text-green-800">Your order is ready for pickup at 316 Automotive!</p>
+          </div>
+          {order.pickupCode && (
+            <div className="flex flex-col items-center gap-3 py-4 bg-white rounded-md border">
+              <p className="text-xs text-muted-foreground">Show this code at the pickup counter</p>
+              <p className="text-3xl font-bold tracking-[0.3em] font-mono">{order.pickupCode}</p>
+              <PickupQRCode code={order.pickupCode} />
+            </div>
+          )}
         </div>
       )}
 

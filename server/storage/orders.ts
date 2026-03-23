@@ -510,6 +510,11 @@ export async function cancelOrder(
   // Enqueue stock restore sync events
   const syncItems = await buildSyncItems(order.items);
   await enqueueStockRestore(syncItems, orderId, "order_cancelled");
+
+  // Send cancellation email (#15 audit fix)
+  if (order.customerEmail) {
+    email.sendOrderCancelledEmail(order.customerEmail, order.customerName || "Customer", order.orderNumber, reason).catch(() => {});
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -560,6 +565,12 @@ async function transitionOrder(
 /** placed -> confirmed, then auto-create pick list */
 export async function confirmOrder(orderId: string): Promise<void> {
   await transitionOrder(orderId, "confirmed", { confirmedAt: new Date() });
+
+  // Send confirmation email
+  const order = await getOrder(orderId);
+  if (order?.customerEmail) {
+    email.sendOrderConfirmedEmail(order.customerEmail, order.customerName || "Customer", order.orderNumber).catch(() => {});
+  }
 
   // Auto-create pick list (best-effort — order is still confirmed if this fails)
   try {
@@ -623,19 +634,39 @@ export async function markOrderDelivered(orderId: string): Promise<void> {
   }
 }
 
-/** Set pickupReadyAt timestamp (does not change status). */
+/** Generate a unique 8-character alphanumeric pickup code. */
+async function generatePickupCode(): Promise<string> {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I confusion
+  for (let attempt = 0; attempt < 10; attempt++) {
+    let code = "";
+    for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    const [existing] = await db.select({ id: onlineStoreOrders.id }).from(onlineStoreOrders).where(eq(onlineStoreOrders.pickupCode, code)).limit(1);
+    if (!existing) return code;
+  }
+  throw new Error("Failed to generate unique pickup code after 10 attempts");
+}
+
+/** Set pickupReadyAt timestamp and generate pickup code. */
 export async function markOrderReadyForPickup(
   orderId: string,
-): Promise<void> {
+): Promise<{ pickupCode: string }> {
+  const pickupCode = await generatePickupCode();
   await db
     .update(onlineStoreOrders)
-    .set({ pickupReadyAt: new Date(), updatedAt: new Date() })
+    .set({ pickupReadyAt: new Date(), pickupCode, updatedAt: new Date() })
     .where(eq(onlineStoreOrders.id, orderId));
 
   const order = await getOrder(orderId);
   if (order?.customerEmail) {
-    email.sendReadyForPickupEmail(order.customerEmail, order.customerName || "Customer", order.orderNumber).catch(() => {});
+    email.sendReadyForPickupEmail(order.customerEmail, order.customerName || "Customer", order.orderNumber, pickupCode).catch(() => {});
   }
+  return { pickupCode };
+}
+
+/** Look up an order by its pickup code. */
+export async function findByPickupCode(code: string) {
+  const [order] = await db.select().from(onlineStoreOrders).where(eq(onlineStoreOrders.pickupCode, code)).limit(1);
+  return order ?? null;
 }
 
 /** packed -> delivered (pickup flow) */

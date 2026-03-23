@@ -52,7 +52,7 @@ export async function mergeGuestCartToServer() {
   try {
     await api("/api/store/cart/merge", {
       method: "POST",
-      body: JSON.stringify({ items: guestItems.map(i => ({ partId: i.partId, quantity: i.quantity })) }),
+      body: JSON.stringify({ items: guestItems.map(i => ({ productId: i.partId, quantity: i.quantity })) }),
     });
     clearGuest();
   } catch {

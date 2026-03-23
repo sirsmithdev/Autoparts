@@ -70,7 +70,7 @@ function NewReturnContent() {
     if (!orderId || !reason || Object.keys(selectedItems).length === 0) return;
     const items = Object.entries(selectedItems)
       .filter(([, qty]) => qty > 0)
-      .map(([orderItemId, quantity]) => ({ orderItemId, quantity }));
+      .map(([orderItemId, quantity]) => ({ orderItemId, quantity, reason }));
     createMutation.mutate({ orderId, reason, reasonDetails: reasonDetails || undefined, items });
   };
 
