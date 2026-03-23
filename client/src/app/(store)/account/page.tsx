@@ -5,8 +5,10 @@ import { api } from "@/lib/api";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
-import { Loader2, User, MapPin, Lock, CheckCircle2, AlertCircle, Package, RotateCcw, ChevronRight } from "lucide-react";
+import { Loader2, User, MapPin, Lock, CheckCircle2, AlertCircle, Package, RotateCcw, ChevronRight, Car, Plus, Trash2, Star } from "lucide-react";
 import Link from "next/link";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useVehicleSelection } from "@/hooks/useVehicleSelection";
 
 const JAMAICA_PARISHES = [
   "Kingston", "St. Andrew", "St. Thomas", "Portland", "St. Mary",
@@ -299,6 +301,207 @@ function PasswordTab() {
   );
 }
 
+interface SavedVehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  nickname: string | null;
+  isDefault: boolean;
+}
+
+function GarageTab() {
+  const queryClient = useQueryClient();
+  const vehicleStore = useVehicleSelection();
+  const [adding, setAdding] = useState(false);
+  const [make, setMake] = useState("");
+  const [model, setModel] = useState("");
+  const [year, setYear] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [makes, setMakes] = useState<string[]>([]);
+  const [models, setModels] = useState<string[]>([]);
+
+  const { data: vehicles = [], isLoading } = useQuery<SavedVehicle[]>({
+    queryKey: ["saved-vehicles"],
+    queryFn: () => api("/api/store/vehicles"),
+  });
+
+  useEffect(() => {
+    api<string[]>("/api/store/catalog/makes").then(setMakes).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (make) {
+      api<string[]>(`/api/store/catalog/models?make=${encodeURIComponent(make)}`).then(setModels).catch(() => {});
+      setModel("");
+    }
+  }, [make]);
+
+  const addMutation = useMutation({
+    mutationFn: (body: { make: string; model: string; year: number; nickname?: string }) =>
+      api("/api/store/vehicles", { method: "POST", body: JSON.stringify(body) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-vehicles"] });
+      setAdding(false);
+      setMake("");
+      setModel("");
+      setYear("");
+      setNickname("");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api(`/api/store/vehicles/${id}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["saved-vehicles"] }),
+  });
+
+  const defaultMutation = useMutation({
+    mutationFn: (id: string) => api(`/api/store/vehicles/${id}/default`, { method: "POST" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["saved-vehicles"] }),
+  });
+
+  const handleSelectVehicle = (v: SavedVehicle) => {
+    vehicleStore.setVehicle(v.make, v.model, v.year);
+  };
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 30 }, (_, i) => currentYear - i);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {vehicles.length === 0 && !adding && (
+        <div className="text-center py-8 space-y-3">
+          <Car className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+          <p className="text-sm text-muted-foreground">No saved vehicles yet. Add your first vehicle to quickly find compatible parts.</p>
+        </div>
+      )}
+
+      {/* Vehicle list */}
+      {vehicles.map((v) => (
+        <div
+          key={v.id}
+          className={`flex items-center justify-between p-4 border rounded-lg transition-all ${
+            v.isDefault ? "border-primary/30 bg-primary/5" : "bg-card hover:border-muted-foreground/30"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Car className={`h-5 w-5 shrink-0 ${v.isDefault ? "text-primary" : "text-muted-foreground"}`} />
+            <div>
+              <p className="font-medium text-sm">
+                {v.year} {v.make} {v.model}
+                {v.isDefault && <span className="ml-2 text-xs text-primary font-semibold">(Default)</span>}
+              </p>
+              {v.nickname && <p className="text-xs text-muted-foreground">{v.nickname}</p>}
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => handleSelectVehicle(v)}
+              className="px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-md hover:bg-primary/10 transition-colors"
+            >
+              Shop Parts
+            </button>
+            {!v.isDefault && (
+              <button
+                onClick={() => defaultMutation.mutate(v.id)}
+                className="p-1.5 text-muted-foreground hover:text-primary rounded transition-colors"
+                title="Set as default"
+              >
+                <Star className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (window.confirm(`Remove ${v.year} ${v.make} ${v.model}?`)) {
+                  deleteMutation.mutate(v.id);
+                }
+              }}
+              className="p-1.5 text-muted-foreground hover:text-destructive rounded transition-colors"
+              title="Remove vehicle"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {/* Add vehicle form */}
+      {adding ? (
+        <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+          <div className="grid grid-cols-3 gap-3">
+            <select
+              className="border rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              value={make}
+              onChange={(e) => setMake(e.target.value)}
+            >
+              <option value="">Make</option>
+              {makes.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select
+              className="border rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              disabled={!make}
+            >
+              <option value="">Model</option>
+              {models.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select
+              className="border rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            >
+              <option value="">Year</option>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <input
+            type="text"
+            placeholder="Nickname (optional, e.g. 'My Corolla')"
+            className="w-full border rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (!make || !model || !year) return;
+                addMutation.mutate({ make, model, year: parseInt(year), nickname: nickname || undefined });
+              }}
+              disabled={!make || !model || !year || addMutation.isPending}
+              className="px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            >
+              {addMutation.isPending ? "Saving..." : "Save Vehicle"}
+            </button>
+            <button
+              onClick={() => setAdding(false)}
+              className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-accent transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Add Vehicle
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AccountPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const router = useRouter();
@@ -359,6 +562,9 @@ export default function AccountPage() {
           <TabsTrigger value="address" className="flex-1 gap-1.5">
             <MapPin className="h-4 w-4" /> Address
           </TabsTrigger>
+          <TabsTrigger value="garage" className="flex-1 gap-1.5">
+            <Car className="h-4 w-4" /> My Garage
+          </TabsTrigger>
           <TabsTrigger value="password" className="flex-1 gap-1.5">
             <Lock className="h-4 w-4" /> Password
           </TabsTrigger>
@@ -373,6 +579,12 @@ export default function AccountPage() {
         <TabsContent value="address">
           <div className="border rounded-xl bg-card p-6 mt-4">
             <AddressTab />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="garage">
+          <div className="border rounded-xl bg-card p-6 mt-4">
+            <GarageTab />
           </div>
         </TabsContent>
 
