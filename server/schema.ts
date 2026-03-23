@@ -392,6 +392,18 @@ export const stockMovements = mysqlTable("stock_movements", {
   index("idx_stock_movements_reference").on(table.referenceType, table.referenceId),
 ]);
 
+export const productActivityLog = mysqlTable("product_activity_log", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
+  productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id, { onDelete: "cascade" }),
+  action: varchar("action", { length: 50 }).notNull(),
+  details: json("details"),
+  performedBy: varchar("performed_by", { length: 36 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_product_activity_product").on(table.productId),
+  index("idx_product_activity_created").on(table.createdAt),
+]);
+
 export const stockReceipts = mysqlTable("stock_receipts", {
   id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
   receiptNumber: varchar("receipt_number", { length: 50 }).notNull().unique(),

@@ -21,6 +21,7 @@ export const PERMISSIONS = [
   "settings:manage",
   "staff:manage",
   "sync:manage",
+  "products:manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -33,6 +34,7 @@ const ROLE_PERMISSIONS: Record<StaffRole, ReadonlySet<Permission>> = {
     "picklists:read", "picklists:manage",
     "pos:operate", "pos:reports",
     "settings:read",
+    "products:manage",
   ]),
   warehouse_staff: new Set<Permission>([
     "orders:read",

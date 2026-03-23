@@ -36,6 +36,13 @@
       "when": 1774272804133,
       "tag": "0004_add_vehicles_wishlist_store_credit",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1774275739572,
+      "tag": "0005_add_product_activity_log",
+      "breakpoints": true
     }
   ]
 }

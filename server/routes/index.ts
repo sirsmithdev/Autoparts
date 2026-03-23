@@ -17,6 +17,7 @@ import staffRoutes from "./staff.routes.js";
 import contactRoutes from "./contact.routes.js";
 import vehiclesRoutes from "./vehicles.routes.js";
 import wishlistRoutes from "./wishlist.routes.js";
+import productsRoutes from "./products.routes.js";
 
 export function registerRoutes(app: Express): void {
   app.use(authRoutes);
@@ -34,4 +35,5 @@ export function registerRoutes(app: Express): void {
   app.use(contactRoutes);
   app.use(vehiclesRoutes);
   app.use(wishlistRoutes);
+  app.use(productsRoutes);
 }

@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 
 const adminNav: Array<{ label: string; href: string; icon: typeof Package; permission: Permission }> = [
-  { label: "Orders", href: "/admin/orders", icon: Package, permission: "orders:read" },
+  { label: "Products", href: "/admin/products", icon: Package, permission: "products:manage" },
+  { label: "Orders", href: "/admin/orders", icon: ShoppingBag, permission: "orders:read" },
   { label: "Pick Lists", href: "/admin/pick-lists", icon: ClipboardList, permission: "picklists:read" },
   { label: "Returns", href: "/admin/returns", icon: RotateCcw, permission: "returns:read" },
   { label: "Warehouse", href: "/admin/warehouse", icon: Warehouse, permission: "warehouse:read" },
