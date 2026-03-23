@@ -319,12 +319,13 @@ router.post("/api/store/orders/:id/retry-payment", authenticateToken, async (req
 // ---------------------------------------------------------------------------
 
 function buildRedirectPage(path: string, errorMessage: string | null): string {
-  // The 3DS iframe needs to redirect the parent window to the result page.
-  // We use postMessage so the React app can handle the redirect.
-  // In production, Next.js pages are served under /parts basePath
+  // Extract orderId from path for postMessage payload
+  const orderIdMatch = path.match(/\/orders\/([^?/]+)/);
+  const orderId = orderIdMatch ? orderIdMatch[1] : null;
+  const success = !errorMessage && orderId;
   const prefix = process.env.NODE_ENV === "production" ? "/parts" : "";
   const fullPath = `${prefix}${path}`;
-  const payload = JSON.stringify({ type: "payment-callback", path: fullPath, error: errorMessage });
+
   return `<!DOCTYPE html>
 <html>
 <head><title>Processing payment...</title></head>
@@ -332,9 +333,20 @@ function buildRedirectPage(path: string, errorMessage: string | null): string {
   <p>Processing your payment...</p>
   <script>
     try {
-      window.parent.postMessage(${JSON.stringify(payload)}, '*');
+      // Send result to the opener window (checkout page that opened this popup)
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({
+          type: 'powertranz-callback',
+          success: ${success ? "true" : "false"},
+          orderId: ${orderId ? `'${orderId}'` : "null"},
+          error: ${errorMessage ? JSON.stringify(errorMessage) : "null"}
+        }, '*');
+        window.close();
+      } else {
+        // Fallback: redirect in current window
+        window.location.href = '${fullPath}';
+      }
     } catch (e) {
-      // Fallback: redirect in current window
       window.location.href = '${fullPath}';
     }
   </script>
