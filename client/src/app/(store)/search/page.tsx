@@ -144,7 +144,7 @@ function SearchContent() {
                 {total} part{total !== 1 ? "s" : ""} found
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <select
                 value={manufacturer}
                 onChange={(e) => updateParam("manufacturer", e.target.value)}
@@ -160,6 +160,23 @@ function SearchContent() {
               >
                 {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={inStockOnly}
+                  onChange={(e) => updateParam("inStockOnly", e.target.checked ? "true" : "")}
+                  className="rounded border-gray-300"
+                />
+                In Stock Only
+              </label>
+              {(q || category || make || manufacturer || condition || inStockOnly || orderBy !== "name") && (
+                <Link
+                  href="/search"
+                  className="text-sm text-primary hover:underline font-medium"
+                >
+                  Clear All
+                </Link>
+              )}
             </div>
           </div>
 

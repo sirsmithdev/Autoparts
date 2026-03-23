@@ -235,7 +235,7 @@ export default function AdminReturnsPage() {
                         )}
                         {ret.status === "approved" && (
                           <button
-                            onClick={() => actionMutation.mutate({ returnId: ret.id, action: "receive" })}
+                            onClick={() => { if (!window.confirm("Mark this return as received?")) return; actionMutation.mutate({ returnId: ret.id, action: "receive" }); }}
                             disabled={actionMutation.isPending}
                             className="px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-accent transition-colors disabled:opacity-40"
                           >
@@ -244,7 +244,7 @@ export default function AdminReturnsPage() {
                         )}
                         {ret.status === "received" && (
                           <button
-                            onClick={() => actionMutation.mutate({ returnId: ret.id, action: "refund" })}
+                            onClick={() => { if (!window.confirm("Issue a refund for this return?")) return; actionMutation.mutate({ returnId: ret.id, action: "refund" }); }}
                             disabled={actionMutation.isPending}
                             className="px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-accent transition-colors disabled:opacity-40"
                           >

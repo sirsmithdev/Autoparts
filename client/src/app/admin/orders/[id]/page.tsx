@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, CheckCircle, Package, Truck, MapPin, X,
-  User, Phone, Mail, FileText, Copy, Store, Loader2,
+  User, Phone, Mail, FileText, Copy, Store, Loader2, CreditCard,
 } from "lucide-react";
 import { format } from "date-fns";
 import { OrderTimeline } from "@/components/OrderTimeline";
@@ -42,6 +42,9 @@ interface OrderWithItems {
   total: string;
   staffNotes: string | null;
   createdAt: string | null;
+  paymentTransactionId: string | null;
+  paymentStatus: string | null;
+  pickListId: string | null;
   items: OrderItem[];
 }
 
@@ -293,6 +296,52 @@ export default function AdminOrderDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Payment */}
+          {(order.paymentTransactionId || order.paymentStatus) && (
+            <div className="border rounded-md bg-card p-5 space-y-3">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-primary" /> Payment
+              </h3>
+              <div className="space-y-1.5 text-sm">
+                {order.paymentStatus && (
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground shrink-0 w-20">Status:</span>
+                    <span className={`capitalize font-medium ${
+                      order.paymentStatus === "paid" ? "text-green-600" :
+                      order.paymentStatus === "refunded" ? "text-amber-600" :
+                      order.paymentStatus === "voided" ? "text-red-600" :
+                      "text-muted-foreground"
+                    }`}>{order.paymentStatus}</span>
+                  </div>
+                )}
+                {order.paymentTransactionId && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground shrink-0 w-20">Transaction:</span>
+                    <span className="font-mono text-xs">{order.paymentTransactionId}</span>
+                    <button onClick={() => navigator.clipboard.writeText(order.paymentTransactionId!)} className="p-1 hover:bg-accent rounded" title="Copy">
+                      <Copy className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Pick List */}
+          {order.pickListId && (
+            <div className="border rounded-md bg-card p-5 space-y-3">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <Package className="h-4 w-4 text-primary" /> Pick List
+              </h3>
+              <Link
+                href={`/admin/pick-lists/${order.pickListId}`}
+                className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+              >
+                View Pick List &rarr;
+              </Link>
+            </div>
+          )}
 
           {/* Staff Notes */}
           <div className="border rounded-md bg-card p-5 space-y-3">

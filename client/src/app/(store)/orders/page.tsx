@@ -9,7 +9,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { format } from "date-fns";
-import { Package, ChevronRight, Truck, Store } from "lucide-react";
+import { Package, ChevronRight, Truck, Store, Search } from "lucide-react";
+import { useState, useMemo } from "react";
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "", label: "All Statuses" },
+  { value: "placed", label: "Placed" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "shipped", label: "Shipped" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
+] as const;
 
 const statusConfig: Record<string, { bg: string; text: string; dot: string }> = {
   placed: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
@@ -37,12 +47,44 @@ export default function OrdersPage() {
   if (authLoading || !isAuthenticated) return null;
 
   const orders = data?.orders || [];
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => {
+      const matchesSearch = !searchTerm || order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = !statusFilter || order.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchTerm, statusFilter]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "My Orders" }]} />
 
       <h1 className="text-2xl font-bold">My Orders</h1>
+
+      {!isLoading && orders.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by order number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full border rounded-md pl-9 pr-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border rounded-md px-2.5 py-2 text-sm bg-background"
+          >
+            {STATUS_FILTER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="space-y-3">
@@ -72,7 +114,11 @@ export default function OrdersPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {orders.map(order => {
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-sm">No orders match your filters.</p>
+            </div>
+          ) : filteredOrders.map(order => {
             const cfg = statusConfig[order.status] || { bg: "bg-gray-50", text: "text-gray-700", dot: "bg-gray-500" };
             return (
               <Link

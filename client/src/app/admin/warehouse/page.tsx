@@ -320,7 +320,7 @@ function LocationsTab() {
                       </button>
                       {loc.isActive && (
                         <button
-                          onClick={() => deactivateMutation.mutate(loc.id)}
+                          onClick={() => { if (!window.confirm(`Deactivate location "${loc.name}"?`)) return; deactivateMutation.mutate(loc.id); }}
                           disabled={deactivateMutation.isPending}
                           className="p-1.5 hover:bg-accent rounded transition-colors"
                           title="Deactivate"

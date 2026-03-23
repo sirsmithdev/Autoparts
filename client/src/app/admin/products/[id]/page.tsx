@@ -470,7 +470,7 @@ export default function AdminEditProductPage() {
                   className="w-full aspect-square rounded-lg object-cover border"
                 />
                 <button
-                  onClick={() => deleteImageMutation.mutate(img.id)}
+                  onClick={() => { if (!window.confirm("Delete this image?")) return; deleteImageMutation.mutate(img.id); }}
                   className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                   title="Delete image"
                 >

@@ -128,10 +128,15 @@ export default function StaffPage() {
                         className="border rounded-md px-2 py-1.5 text-sm bg-background"
                         defaultValue=""
                         onChange={(e) => {
-                          if (e.target.value) {
+                          const role = e.target.value;
+                          if (role) {
+                            if (!window.confirm(`Assign "${ROLE_LABELS[role as StaffRole]}" role to ${customer.firstName}?`)) {
+                              e.target.value = "";
+                              return;
+                            }
                             setRoleMutation.mutate({
                               customerId: customer.id,
-                              role: e.target.value,
+                              role,
                             });
                           }
                         }}
@@ -185,10 +190,15 @@ export default function StaffPage() {
                     <select
                       value={member.role || ""}
                       onChange={(e) => {
-                        if (e.target.value) {
+                        const role = e.target.value;
+                        if (role) {
+                          if (!window.confirm(`Change ${member.firstName}'s role to "${ROLE_LABELS[role as StaffRole]}"?`)) {
+                            e.target.value = member.role || "";
+                            return;
+                          }
                           setRoleMutation.mutate({
                             customerId: member.id,
-                            role: e.target.value,
+                            role,
                           });
                         }
                       }}

@@ -246,9 +246,8 @@ function LoginForm() {
           )}
 
           <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
-            By continuing with Google or email, you agree to 316 Automotive&apos;s{" "}
-            <Link href="#" className="text-primary hover:underline">Terms of Service</Link> and{" "}
-            <Link href="#" className="text-primary hover:underline">Privacy Policy</Link>.
+            By continuing with Google or email, you agree to 316 Automotive&apos;s
+            Terms of Service and Privacy Policy.
           </p>
         </div>
 

@@ -9,6 +9,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Trash2, ShoppingCart, Minus, Plus, Package, Truck } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const FREE_SHIPPING_THRESHOLD = 15000;
 
@@ -130,6 +131,12 @@ function CartTable({
       {/* Actions */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="flex gap-2 flex-1">
+          <Link
+            href="/search"
+            className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+          >
+            &larr; Continue Shopping
+          </Link>
         </div>
       </div>
     </div>
@@ -163,17 +170,13 @@ function CartSummary({
             {subtotal >= FREE_SHIPPING_THRESHOLD ? (
               <span className="font-medium text-green-600">Free</span>
             ) : (
-              <>
-                <span className="text-muted-foreground text-xs">Flat rate: {formatPrice(1500)}</span>
-                <br />
-                <span className="text-muted-foreground text-xs">Shipping to JA.</span>
-              </>
+              <span className="text-muted-foreground text-xs">Calculated at checkout</span>
             )}
           </div>
         </div>
         <div className="flex justify-between pt-1">
           <span className="font-bold text-base">Total</span>
-          <span className="font-bold text-base">{formatPrice(subtotal >= FREE_SHIPPING_THRESHOLD ? subtotal : subtotal + 1500)}</span>
+          <span className="font-bold text-base">{subtotal >= FREE_SHIPPING_THRESHOLD ? formatPrice(subtotal) : formatPrice(subtotal) + "+"}</span>
         </div>
       </div>
       <Link
@@ -232,6 +235,7 @@ function GuestCart() {
 
 function ServerCart() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data: cartData, isLoading } = useQuery<{ items: Array<{ id: string; partId: string; quantity: number; currentPrice: string; priceChanged: boolean; stockStatus: string; part: { name: string; partNumber: string; imageUrl?: string | null } }>; itemCount: number }>({
     queryKey: ["server-cart"],
     queryFn: () => api("/api/store/cart"),
@@ -241,11 +245,13 @@ function ServerCart() {
     mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
       api(`/api/store/cart/items/${itemId}`, { method: "PATCH", body: JSON.stringify({ quantity }) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["server-cart"] }),
+    onError: () => toast({ title: "Failed to update cart", variant: "destructive" }),
   });
 
   const removeMutation = useMutation({
     mutationFn: (itemId: string) => api(`/api/store/cart/items/${itemId}`, { method: "DELETE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["server-cart"] }),
+    onError: () => toast({ title: "Failed to update cart", variant: "destructive" }),
   });
 
   if (isLoading) return <CartSkeleton />;

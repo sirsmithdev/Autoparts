@@ -178,6 +178,17 @@ export function PartDetailClient({ detail }: { detail: PartDetail }) {
             )}
           </div>
 
+          {/* Out of stock contact */}
+          {part.stockStatus === "out_of_stock" && (
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground">This item is currently out of stock.</span>
+              <Link href="/contact" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap">
+                Contact us about this part
+              </Link>
+            </div>
+          )}
+
           {/* Add to Cart */}
           {part.stockStatus !== "out_of_stock" && (
             <div className="flex items-center gap-3">
@@ -212,6 +223,14 @@ export function PartDetailClient({ detail }: { detail: PartDetail }) {
                   <><ShoppingCart className="h-4 w-4" /> Add to Cart</>
                 )}
               </button>
+              {added && (
+                <Link
+                  href="/cart"
+                  className="text-sm font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+                >
+                  View Cart &rarr;
+                </Link>
+              )}
             </div>
           )}
 

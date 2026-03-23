@@ -100,7 +100,7 @@ export default async function HomePage() {
               { icon: Truck, label: "Free Shipping", sub: "On orders over $15,000" },
               { icon: RotateCcw, label: "Easy Returns", sub: "30-day return policy" },
               { icon: Shield, label: "Warranty", sub: "Quality guaranteed" },
-              { icon: Headphones, label: "24/7 Support", sub: "Mon-Sat 8am-5pm" },
+              { icon: Headphones, label: "Customer Support", sub: "Mon-Sat 8am-5pm" },
               { icon: CheckCircle2, label: "Genuine Parts", sub: "OEM & aftermarket" },
               { icon: Clock, label: "Fast Delivery", sub: "Island-wide" },
             ].map(({ icon: Icon, label, sub }) => (
@@ -301,7 +301,7 @@ export default async function HomePage() {
       </section>
 
       {/* ═══ SECOND PRODUCTS SECTION ═══ */}
-      {featured.length > 0 && (
+      {featured.length > 8 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Recently Added</h2>
@@ -310,7 +310,7 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {featured.slice(0, 8).map(part => <PartCard key={`recent-${part.id}`} {...part} />)}
+            {featured.slice(8, 16).map(part => <PartCard key={`recent-${part.id}`} {...part} />)}
           </div>
         </section>
       )}
@@ -333,7 +333,7 @@ export default async function HomePage() {
               </a>
               <span className="text-lg font-bold text-white hidden md:inline">(876) 555-0316</span>
             </div>
-            <p className="text-xs text-gray-500 md:hidden">You can contact us 24/7.</p>
+            <p className="text-xs text-gray-500 md:hidden">Mon-Sat 8am-5pm.</p>
           </div>
         </div>
       </section>
@@ -413,45 +413,6 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ═══ BLOG POSTS ═══ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Our most ordered products.</p>
-            <h2 className="text-2xl font-bold">Latest from the Blog</h2>
-          </div>
-          <Link href="#" className="text-sm text-primary hover:underline font-medium flex items-center gap-1">
-            View All <ChevronRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { title: "Buying Cheap Used Transmissions Isn't as Risky as You Think", date: "20 May 2025", author: "316 Auto" },
-            { title: "What to Do When Your Car Parts Start Wearing Out", date: "18 May 2025", author: "316 Auto" },
-            { title: "Top 10 Car Parts Every Driver Should Know About", date: "15 May 2025", author: "316 Auto" },
-          ].map(post => (
-            <article key={post.title} className="group border rounded-md overflow-hidden bg-card hover:shadow-md transition-shadow">
-              <div className="aspect-[3/2] bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
-                <Cog className="h-16 w-16 text-gray-200 group-hover:text-gray-300 transition-colors" />
-              </div>
-              <div className="p-4 space-y-2">
-                <h3 className="text-sm font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                  {post.title}
-                </h3>
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  Expert advice and tips for maintaining your vehicle and choosing the right parts.
-                </p>
-                <div className="flex items-center gap-2 text-[11px] text-muted-foreground pt-1">
-                  <span>by <span className="font-medium text-primary">{post.author}</span></span>
-                  <span>&middot;</span>
-                  <span>{post.date}</span>
-                </div>
-              </div>
-            </article>
-          ))}
         </div>
       </section>
 

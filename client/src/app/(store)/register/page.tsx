@@ -127,7 +127,7 @@ function RegisterForm() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium block mb-1.5">Phone *</label>
+            <label className="text-sm font-medium block mb-1.5">Phone <span className="text-muted-foreground font-normal">(optional)</span></label>
             <input
               type="tel"
               className="w-full border rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"

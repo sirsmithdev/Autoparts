@@ -214,7 +214,7 @@ export default function CheckoutPage() {
           </h2>
           <div className="space-y-4 bg-card border rounded-md p-5">
             <div>
-              <label className="text-sm font-medium block mb-1.5">Delivery Zone / Parish</label>
+              <label className="text-sm font-medium block mb-1.5">Delivery Zone / Parish <span className="text-destructive">*</span></label>
               <select
                 className="w-full border rounded-md px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                 value={selectedZoneId}
@@ -233,7 +233,7 @@ export default function CheckoutPage() {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1.5">Street Address</label>
+              <label className="text-sm font-medium block mb-1.5">Street Address <span className="text-destructive">*</span></label>
               <AddressAutocomplete
                 value={deliveryAddress}
                 onChange={({ address, parish }) => {
@@ -312,7 +312,7 @@ export default function CheckoutPage() {
           {(paymentMode === "new" || savedCards.length === 0) && (
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium block mb-1.5">Card Number</label>
+                <label className="text-sm font-medium block mb-1.5">Card Number <span className="text-destructive">*</span></label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -325,7 +325,7 @@ export default function CheckoutPage() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="text-sm font-medium block mb-1.5">Expiry</label>
+                  <label className="text-sm font-medium block mb-1.5">Expiry <span className="text-destructive">*</span></label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -341,7 +341,7 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium block mb-1.5">CVV</label>
+                  <label className="text-sm font-medium block mb-1.5">CVV <span className="text-destructive">*</span></label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -361,7 +361,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium block mb-1.5">Cardholder Name</label>
+                <label className="text-sm font-medium block mb-1.5">Cardholder Name <span className="text-destructive">*</span></label>
                 <input
                   type="text"
                   value={cardholderName}
@@ -429,6 +429,12 @@ export default function CheckoutPage() {
             <><CreditCard className="h-4 w-4" /> Pay {formatPrice(estimatedTotal)}</>
           )}
         </button>
+
+        {!isSubmitting && (!canSubmit || !hasPayment) && (
+          <p className="text-center text-xs text-muted-foreground">
+            Please fill in all delivery and payment details to continue.
+          </p>
+        )}
 
         <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5" />

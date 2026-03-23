@@ -53,7 +53,7 @@ export function StoreFooter() {
                 <li><Link href="/account" className="hover:text-white transition-colors">My Account</Link></li>
                 <li><Link href="/orders" className="hover:text-white transition-colors">Order Tracking</Link></li>
                 <li><Link href="/returns" className="hover:text-white transition-colors">Returns & Replacements</Link></li>
-                <li><Link href="/policies/returns" className="hover:text-white transition-colors">Refund and Returns Policy</Link></li>
+                <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
               </ul>
             </div>
 
@@ -63,7 +63,7 @@ export function StoreFooter() {
               <ul className="space-y-2.5 text-sm">
                 <li><Link href="/search" className="hover:text-white transition-colors">Browse All Parts</Link></li>
                 <li><Link href="/search?featured=true" className="hover:text-white transition-colors">Featured Parts</Link></li>
-                <li><Link href="/diagrams" className="hover:text-white transition-colors">OEM Diagrams</Link></li>
+                <li><Link href="/search?category=Engine" className="hover:text-white transition-colors">Engine Parts</Link></li>
                 <li>
                   <a href="https://316-automotive.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
                     316 Automotive Main Site
@@ -97,15 +97,9 @@ export function StoreFooter() {
                   316 Auto Parts
                 </Link>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500 mr-2">Follow Us</span>
-                  <a href="#" className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
-                    <Facebook className="h-4 w-4" />
-                  </a>
-                  <a href="#" className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
-                    <Instagram className="h-4 w-4" />
-                  </a>
-                  <a href="#" className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
-                    <Twitter className="h-4 w-4" />
+                  <span className="text-xs text-gray-500 mr-2">Call us</span>
+                  <a href="tel:+18765550316" className="text-xs text-gray-400 hover:text-white transition-colors">
+                    (876) 555-0316
                   </a>
                 </div>
               </div>

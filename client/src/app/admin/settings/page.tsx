@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 /* ---------- Types ---------- */
 
@@ -58,6 +59,7 @@ const emptyZoneForm: DeliveryZoneForm = {
 
 export default function AdminSettingsPage() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   /* ---- Store Settings ---- */
 
@@ -103,6 +105,7 @@ export default function AdminSettingsPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-store-settings"] });
+      toast({ title: "Settings saved successfully" });
     },
   });
 
@@ -114,6 +117,7 @@ export default function AdminSettingsPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-store-settings"] });
+      toast({ title: "Settings saved successfully" });
     },
   });
 

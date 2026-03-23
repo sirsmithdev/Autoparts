@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import {
   ShoppingCart, User, LogOut, Search, Store,
   Package, RotateCcw, ChevronDown, Menu, X, Settings,
-  Heart, Grid3X3, Tag, Flame,
+  Grid3X3, Tag, Flame,
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -163,13 +163,7 @@ export function StoreHeader() {
                 </Link>
               )}
 
-              {/* Wishlist placeholder */}
-              <button className="relative flex flex-col items-center gap-0.5 p-2 text-[rgb(49,67,80)] hover:text-foreground transition-colors rounded-md hover:bg-slate-100 hidden sm:flex">
-                <Heart className="h-5 w-5" />
-                <span className="absolute top-0.5 right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                  0
-                </span>
-              </button>
+              {/* Wishlist — hidden until frontend page is built */}
 
               {/* Cart */}
               <Link href="/cart" className="relative flex flex-col items-center gap-0.5 p-2 text-[rgb(49,67,80)] hover:text-foreground transition-colors rounded-md hover:bg-slate-100">
@@ -226,15 +220,15 @@ export function StoreHeader() {
               Shop
             </Link>
             <Link href="/search?category=Brakes" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
-              Tires & Wheels
+              Brakes
             </Link>
             <Link href="/search?category=Electrical" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
-              Headlights & Lighting
+              Electrical
             </Link>
-            <Link href="/diagrams" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
-              Blog
+            <Link href="/search?category=Engine" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
+              Engine
             </Link>
-            <Link href="/" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
+            <Link href="/contact" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
               Contact
             </Link>
 
@@ -242,7 +236,7 @@ export function StoreHeader() {
 
             {/* Right badges */}
             <Link
-              href="/search?sort=popular"
+              href="/search?orderBy=popular"
               className="shrink-0 flex items-center gap-1 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary transition-colors"
             >
               <Flame className="h-3.5 w-3.5 text-orange-500" />

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { Loader2, Send, CheckCircle } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -55,6 +56,14 @@ export default function ContactPage() {
             Thank you for contacting us. We&apos;ll get back to you as soon as
             possible. A confirmation email has been sent to your inbox.
           </p>
+          <div className="flex items-center justify-center gap-4 pt-2">
+            <Link href="/" className="text-sm font-medium text-primary hover:underline">
+              Back to Home
+            </Link>
+            <Link href="/search" className="text-sm font-medium text-primary hover:underline">
+              Browse Parts
+            </Link>
+          </div>
         </div>
       </div>
     );

@@ -47,6 +47,7 @@ export function PartCard({
         });
     } else {
       addGuestItem({ partId: id, quantity: 1, name, partNumber, salePrice, imageUrl });
+      toast({ title: "Added to cart", description: name });
     }
   };
 

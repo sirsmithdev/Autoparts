@@ -8,7 +8,7 @@ import { OrderTimeline } from "@/components/OrderTimeline";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { format } from "date-fns";
 import { ArrowLeft, Truck, Store, MapPin, Package as PackageIcon, XCircle, RotateCcw, Copy, AlertCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -46,6 +46,8 @@ export default function OrderDetailPage() {
   });
 
   const [cancelError, setCancelError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const cancelMutation = useMutation({
     mutationFn: () => api(`/api/store/orders/${id}/cancel`, { method: "POST", body: JSON.stringify({ reason: "Customer cancelled" }) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-order", id] }),
@@ -132,11 +134,16 @@ export default function OrderDetailPage() {
             <p className="text-sm font-mono text-muted-foreground">{order.trackingNumber}</p>
           </div>
           <button
-            onClick={() => navigator.clipboard.writeText(order.trackingNumber!)}
-            className="p-1.5 hover:bg-accent rounded transition-colors"
+            onClick={() => {
+              navigator.clipboard.writeText(order.trackingNumber!);
+              setCopied(true);
+              clearTimeout(copiedTimer.current);
+              copiedTimer.current = setTimeout(() => setCopied(false), 2000);
+            }}
+            className="p-1.5 hover:bg-accent rounded transition-colors text-sm"
             title="Copy tracking number"
           >
-            <Copy className="h-4 w-4 text-muted-foreground" />
+            {copied ? <span className="text-xs font-medium text-green-600 px-1">Copied!</span> : <Copy className="h-4 w-4 text-muted-foreground" />}
           </button>
         </div>
       )}
@@ -207,7 +214,7 @@ export default function OrderDetailPage() {
       <div className="flex gap-3">
         {order.status === "placed" && (
           <button
-            onClick={() => { setCancelError(""); cancelMutation.mutate(); }}
+            onClick={() => { if (!window.confirm("Are you sure you want to cancel this order?")) return; setCancelError(""); cancelMutation.mutate(); }}
             disabled={cancelMutation.isPending}
             className="inline-flex items-center gap-2 px-4 py-2.5 border border-destructive/30 text-destructive rounded-lg text-sm font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
           >

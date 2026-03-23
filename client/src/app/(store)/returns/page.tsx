@@ -66,7 +66,7 @@ export default function ReturnsPage() {
           {returns.map(ret => {
             const cfg = statusConfig[ret.status] || { bg: "bg-gray-50", text: "text-gray-700", dot: "bg-gray-500" };
             return (
-              <div key={ret.id} className="group border rounded-lg p-5 bg-card hover:shadow-sm transition-shadow">
+              <Link key={ret.id} href={`/returns/${ret.id}`} className="group block border rounded-lg p-5 bg-card hover:shadow-md hover:border-primary/20 transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="font-mono font-semibold text-sm">{ret.returnNumber}</span>
@@ -75,15 +75,13 @@ export default function ReturnsPage() {
                       {ret.status.replace(/_/g, " ")}
                     </span>
                   </div>
-                  <Link href={`/orders/${ret.orderId}`} className="flex items-center gap-1 text-sm text-primary hover:underline">
-                    View Order <ChevronRight className="h-3.5 w-3.5" />
-                  </Link>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
                 <div className="flex items-center gap-4 mt-2.5 text-sm text-muted-foreground">
                   <span className="capitalize">{ret.reason.replace(/_/g, " ")}</span>
                   <span>{format(new Date(ret.requestedAt), "MMM d, yyyy")}</span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

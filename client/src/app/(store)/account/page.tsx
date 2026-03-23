@@ -5,7 +5,8 @@ import { api } from "@/lib/api";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
-import { Loader2, User, MapPin, Lock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, User, MapPin, Lock, CheckCircle2, AlertCircle, Package, RotateCcw, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 const JAMAICA_PARISHES = [
   "Kingston", "St. Andrew", "St. Thomas", "Portland", "St. Mary",
@@ -321,6 +322,33 @@ export default function AccountPage() {
         <p className="text-sm text-muted-foreground mt-1">
           Manage your profile, address, and password
         </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          href="/orders"
+          className="flex items-center justify-between p-4 border rounded-lg bg-card hover:shadow-md hover:border-primary/20 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <Package className="h-4.5 w-4.5 text-primary" />
+            </div>
+            <span className="text-sm font-semibold">My Orders</span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
+        <Link
+          href="/returns"
+          className="flex items-center justify-between p-4 border rounded-lg bg-card hover:shadow-md hover:border-primary/20 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <RotateCcw className="h-4.5 w-4.5 text-primary" />
+            </div>
+            <span className="text-sm font-semibold">My Returns</span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
       </div>
 
       <Tabs defaultValue="profile">
