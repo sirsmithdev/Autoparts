@@ -18,6 +18,7 @@ import contactRoutes from "./contact.routes.js";
 import vehiclesRoutes from "./vehicles.routes.js";
 import wishlistRoutes from "./wishlist.routes.js";
 import productsRoutes from "./products.routes.js";
+import partsIndexRoutes from "./partsIndex.routes.js";
 
 export function registerRoutes(app: Express): void {
   app.use(authRoutes);
@@ -36,4 +37,5 @@ export function registerRoutes(app: Express): void {
   app.use(vehiclesRoutes);
   app.use(wishlistRoutes);
   app.use(productsRoutes);
+  app.use(partsIndexRoutes);
 }
