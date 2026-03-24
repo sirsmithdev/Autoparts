@@ -30,8 +30,9 @@ router.get("/api/store/catalog/decode-vin/:vin", async (req, res) => {
     }
 
     const car = cars[0];
+    const brandName = (v: unknown) => typeof v === "object" && v && "name" in v ? (v as { name: string }).name : String(v);
     res.json({
-      make: car.brand,
+      make: brandName(car.brand),
       model: car.model,
       year: String(car.year),
       generation: car.generation,
@@ -39,7 +40,7 @@ router.get("/api/store/catalog/decode-vin/:vin", async (req, res) => {
       bodyType: car.bodyType,
       vinCarId: car.id,
       alternatives: cars.length > 1 ? cars.slice(1).map(c => ({
-        make: c.brand,
+        make: brandName(c.brand),
         model: c.model,
         year: String(c.year),
         engine: c.engine,
