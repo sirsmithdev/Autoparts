@@ -43,6 +43,13 @@
       "when": 1774275739572,
       "tag": "0005_add_product_activity_log",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1774395985309,
+      "tag": "0006_add_staff_activity_and_invites",
+      "breakpoints": true
     }
   ]
 }

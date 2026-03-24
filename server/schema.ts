@@ -54,6 +54,7 @@ export const syncDirectionValues = ["inbound", "outbound"] as const;
 export const syncStatusValues = ["success", "failed", "queued"] as const;
 export const syncQueueStatusValues = ["pending", "processing", "completed", "failed"] as const;
 export const staffRoleValues = ["admin", "manager", "warehouse_staff", "cashier"] as const;
+export const staffInviteStatusValues = ["pending", "accepted", "expired"] as const;
 
 // ==================== Core Tables (6) ====================
 
@@ -709,3 +710,38 @@ export type SavedVehicle = typeof savedVehicles.$inferSelect;
 export type InsertSavedVehicle = typeof savedVehicles.$inferInsert;
 export type Wishlist = typeof wishlists.$inferSelect;
 export type InsertWishlist = typeof wishlists.$inferInsert;
+
+// ==================== Staff Activity & Invites ====================
+
+export const staffActivityLog = mysqlTable("staff_activity_log", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
+  staffId: varchar("staff_id", { length: 36 }).notNull().references(() => customers.id, { onDelete: "cascade" }),
+  action: varchar("action", { length: 100 }).notNull(),
+  entity: varchar("entity", { length: 50 }),
+  entityId: varchar("entity_id", { length: 36 }),
+  details: json("details"),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_staff_activity_staff").on(table.staffId),
+  index("idx_staff_activity_action").on(table.action),
+  index("idx_staff_activity_entity").on(table.entity, table.entityId),
+  index("idx_staff_activity_created").on(table.createdAt),
+]);
+
+export const staffInvites = mysqlTable("staff_invites", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
+  email: varchar("email", { length: 255 }).notNull(),
+  role: mysqlEnum("role", staffRoleValues).notNull(),
+  invitedBy: varchar("invited_by", { length: 36 }).notNull().references(() => customers.id, { onDelete: "cascade" }),
+  status: mysqlEnum("status", staffInviteStatusValues).notNull().default("pending"),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_staff_invites_email").on(table.email),
+  index("idx_staff_invites_token").on(table.token),
+]);
+
+export type StaffActivityLog = typeof staffActivityLog.$inferSelect;
+export type StaffInvite = typeof staffInvites.$inferSelect;

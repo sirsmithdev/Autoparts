@@ -7,6 +7,8 @@ import { z } from "zod";
 import { authenticateToken, requirePermission } from "../middleware.js";
 import { STAFF_ROLES } from "../permissions.js";
 import * as customerStore from "../storage/customers.js";
+import * as staffActivity from "../storage/staffActivity.js";
+import * as staffInviteStore from "../storage/staffInvites.js";
 
 const router = Router();
 
@@ -79,6 +81,7 @@ router.post(
 
       await customerStore.setRole(customerId, body.role);
 
+      staffActivity.logActivity({ staffId: req.customer!.customerId, action: "staff_role_assigned", entity: "customer", entityId: customerId, details: { role: body.role }, ipAddress: req.ip });
       res.json({ message: `Role set to ${body.role}`, customerId, role: body.role });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -112,10 +115,91 @@ router.delete(
 
       await customerStore.removeRole(customerId);
 
+      staffActivity.logActivity({ staffId: req.customer!.customerId, action: "staff_role_removed", entity: "customer", entityId: customerId, ipAddress: req.ip });
       res.json({ message: "Staff role removed", customerId });
     } catch (error) {
       console.error("Failed to remove role:", error);
       res.status(500).json({ message: "Failed to remove role" });
+    }
+  },
+);
+
+// ─── POST /api/store/admin/staff/invite ──────────────────
+// Create a staff invite (email + role).
+
+router.post(
+  "/api/store/admin/staff/invite",
+  authenticateToken,
+  requirePermission("staff:manage"),
+  async (req, res) => {
+    try {
+      const { email, role } = req.body;
+      if (!email || typeof email !== "string") {
+        return res.status(400).json({ message: "email is required" });
+      }
+      if (!role || !STAFF_ROLES.includes(role)) {
+        return res.status(400).json({ message: `role must be one of: ${STAFF_ROLES.join(", ")}` });
+      }
+
+      // Check for existing pending invite
+      const existing = await staffInviteStore.findPendingInviteByEmail(email.trim());
+      if (existing) {
+        return res.status(409).json({ message: "A pending invite already exists for this email" });
+      }
+
+      const invite = await staffInviteStore.createInvite({
+        email: email.trim(),
+        role,
+        invitedBy: req.customer!.customerId,
+      });
+
+      staffActivity.logActivity({ staffId: req.customer!.customerId, action: "staff_invited", entity: "staff_invite", entityId: invite.id, details: { email: email.trim(), role }, ipAddress: req.ip });
+      res.status(201).json(invite);
+    } catch (error) {
+      console.error("Failed to create invite:", error);
+      res.status(500).json({ message: "Failed to create invite" });
+    }
+  },
+);
+
+// ─── GET /api/store/admin/staff/invites ──────────────────
+// List all staff invites.
+
+router.get(
+  "/api/store/admin/staff/invites",
+  authenticateToken,
+  requirePermission("staff:manage"),
+  async (_req, res) => {
+    try {
+      const invites = await staffInviteStore.listInvites();
+      res.json(invites);
+    } catch (error) {
+      console.error("Failed to list invites:", error);
+      res.status(500).json({ message: "Failed to list invites" });
+    }
+  },
+);
+
+// ─── GET /api/store/admin/staff/activity ─────────────────
+// Get staff activity log with optional filters.
+
+router.get(
+  "/api/store/admin/staff/activity",
+  authenticateToken,
+  requirePermission("staff:manage"),
+  async (req, res) => {
+    try {
+      const result = await staffActivity.getActivityLog({
+        staffId: req.query.staffId as string | undefined,
+        action: req.query.action as string | undefined,
+        entity: req.query.entity as string | undefined,
+        page: req.query.page ? parseInt(req.query.page as string) : undefined,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to get activity log:", error);
+      res.status(500).json({ message: "Failed to get activity log" });
     }
   },
 );

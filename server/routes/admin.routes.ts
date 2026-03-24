@@ -8,6 +8,7 @@ import * as orders from "../storage/orders.js";
 import * as returns from "../storage/returns.js";
 import * as settings from "../storage/settings.js";
 import * as syncStorage from "../storage/sync.js";
+import * as staffActivity from "../storage/staffActivity.js";
 
 const router = Router();
 
@@ -41,8 +42,10 @@ router.get("/api/store/admin/orders/:id", authenticateToken, requirePermission("
 
 router.post("/api/store/admin/orders/:id/confirm", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
-    await orders.confirmOrder(String(req.params.id));
-    const order = await orders.getOrder(String(req.params.id));
+    const orderId = String(req.params.id);
+    await orders.confirmOrder(orderId);
+    const order = await orders.getOrder(orderId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "order_confirmed", entity: "order", entityId: orderId, ipAddress: req.ip });
     res.json(order);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to confirm order";
@@ -64,8 +67,10 @@ router.post("/api/store/admin/orders/:id/start-picking", authenticateToken, requ
 
 router.post("/api/store/admin/orders/:id/pack", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
-    await orders.markOrderPacked(String(req.params.id), req.customer!.customerId);
-    const order = await orders.getOrder(String(req.params.id));
+    const orderId = String(req.params.id);
+    await orders.markOrderPacked(orderId, req.customer!.customerId);
+    const order = await orders.getOrder(orderId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "order_packed", entity: "order", entityId: orderId, ipAddress: req.ip });
     res.json(order);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to mark packed";
@@ -75,9 +80,11 @@ router.post("/api/store/admin/orders/:id/pack", authenticateToken, requirePermis
 
 router.post("/api/store/admin/orders/:id/ship", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
+    const orderId = String(req.params.id);
     const { trackingNumber } = req.body;
-    await orders.markOrderShipped(String(req.params.id), trackingNumber || "");
-    const order = await orders.getOrder(String(req.params.id));
+    await orders.markOrderShipped(orderId, trackingNumber || "");
+    const order = await orders.getOrder(orderId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "order_shipped", entity: "order", entityId: orderId, ipAddress: req.ip });
     res.json(order);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to mark shipped";
@@ -98,8 +105,10 @@ router.post("/api/store/admin/orders/:id/out-for-delivery", authenticateToken, r
 
 router.post("/api/store/admin/orders/:id/deliver", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
-    await orders.markOrderDelivered(String(req.params.id));
-    const order = await orders.getOrder(String(req.params.id));
+    const orderId = String(req.params.id);
+    await orders.markOrderDelivered(orderId);
+    const order = await orders.getOrder(orderId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "order_delivered", entity: "order", entityId: orderId, ipAddress: req.ip });
     res.json(order);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to mark delivered";
@@ -109,8 +118,10 @@ router.post("/api/store/admin/orders/:id/deliver", authenticateToken, requirePer
 
 router.post("/api/store/admin/orders/:id/ready-for-pickup", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
-    const { pickupCode } = await orders.markOrderReadyForPickup(String(req.params.id));
-    const order = await orders.getOrder(String(req.params.id));
+    const orderId = String(req.params.id);
+    const { pickupCode } = await orders.markOrderReadyForPickup(orderId);
+    const order = await orders.getOrder(orderId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "order_ready_pickup", entity: "order", entityId: orderId, ipAddress: req.ip });
     res.json({ ...order, pickupCode });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update order";
@@ -134,9 +145,11 @@ router.post("/api/store/admin/orders/verify-pickup", authenticateToken, requireP
 
 router.post("/api/store/admin/orders/:id/picked-up", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
+    const orderId = String(req.params.id);
     const pickedUpBy = req.body.pickedUpBy || req.customer?.email || "staff";
-    await orders.markOrderPickedUp(String(req.params.id), pickedUpBy);
-    const order = await orders.getOrder(String(req.params.id));
+    await orders.markOrderPickedUp(orderId, pickedUpBy);
+    const order = await orders.getOrder(orderId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "order_picked_up", entity: "order", entityId: orderId, ipAddress: req.ip });
     res.json(order);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update order";
@@ -146,10 +159,12 @@ router.post("/api/store/admin/orders/:id/picked-up", authenticateToken, requireP
 
 router.post("/api/store/admin/orders/:id/cancel", authenticateToken, requirePermission("orders:manage"), async (req, res) => {
   try {
+    const orderId = String(req.params.id);
     const { reason } = req.body;
     if (!reason) return res.status(400).json({ message: "reason is required" });
-    await orders.cancelOrder(String(req.params.id), reason, req.customer!.customerId);
-    const order = await orders.getOrder(String(req.params.id));
+    await orders.cancelOrder(orderId, reason, req.customer!.customerId);
+    const order = await orders.getOrder(orderId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "order_cancelled", entity: "order", entityId: orderId, ipAddress: req.ip });
     res.json(order);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to cancel order";
@@ -196,8 +211,10 @@ router.get("/api/store/admin/returns/:id", authenticateToken, requirePermission(
 
 router.post("/api/store/admin/returns/:id/approve", authenticateToken, requirePermission("returns:manage"), async (req, res) => {
   try {
-    await returns.approveReturn(String(req.params.id), req.customer!.customerId);
-    const ret = await returns.getReturn(String(req.params.id));
+    const returnId = String(req.params.id);
+    await returns.approveReturn(returnId, req.customer!.customerId);
+    const ret = await returns.getReturn(returnId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "return_approved", entity: "return", entityId: returnId, ipAddress: req.ip });
     res.json(ret);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to approve return";
@@ -207,10 +224,12 @@ router.post("/api/store/admin/returns/:id/approve", authenticateToken, requirePe
 
 router.post("/api/store/admin/returns/:id/reject", authenticateToken, requirePermission("returns:manage"), async (req, res) => {
   try {
+    const returnId = String(req.params.id);
     const { reason } = req.body;
     if (!reason) return res.status(400).json({ message: "reason is required" });
-    await returns.rejectReturn(String(req.params.id), req.customer!.customerId, reason);
-    const ret = await returns.getReturn(String(req.params.id));
+    await returns.rejectReturn(returnId, req.customer!.customerId, reason);
+    const ret = await returns.getReturn(returnId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "return_rejected", entity: "return", entityId: returnId, ipAddress: req.ip });
     res.json(ret);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to reject return";
@@ -220,12 +239,14 @@ router.post("/api/store/admin/returns/:id/reject", authenticateToken, requirePer
 
 router.post("/api/store/admin/returns/:id/receive", authenticateToken, requirePermission("returns:manage"), async (req, res) => {
   try {
+    const returnId = String(req.params.id);
     const { itemConditions } = req.body;
     if (!Array.isArray(itemConditions)) {
       return res.status(400).json({ message: "itemConditions array is required" });
     }
-    await returns.receiveReturn(String(req.params.id), req.customer!.customerId, itemConditions);
-    const ret = await returns.getReturn(String(req.params.id));
+    await returns.receiveReturn(returnId, req.customer!.customerId, itemConditions);
+    const ret = await returns.getReturn(returnId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "return_received", entity: "return", entityId: returnId, ipAddress: req.ip });
     res.json(ret);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to receive return";
@@ -235,8 +256,10 @@ router.post("/api/store/admin/returns/:id/receive", authenticateToken, requirePe
 
 router.post("/api/store/admin/returns/:id/refund", authenticateToken, requirePermission("returns:manage"), async (req, res) => {
   try {
-    await returns.refundReturn(String(req.params.id));
-    const ret = await returns.getReturn(String(req.params.id));
+    const returnId = String(req.params.id);
+    await returns.refundReturn(returnId);
+    const ret = await returns.getReturn(returnId);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "return_refunded", entity: "return", entityId: returnId, ipAddress: req.ip });
     res.json(ret);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to refund return";
@@ -317,6 +340,7 @@ router.get("/api/store/admin/settings", authenticateToken, requirePermission("se
 router.patch("/api/store/admin/settings", authenticateToken, requirePermission("settings:manage"), async (req, res) => {
   try {
     const updated = await settings.updateStoreSettings(req.body);
+    staffActivity.logActivity({ staffId: req.customer!.customerId, action: "settings_updated", entity: "settings", ipAddress: req.ip });
     res.json(updated);
   } catch (error) {
     res.status(500).json({ message: "Failed to update store settings" });
