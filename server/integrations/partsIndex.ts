@@ -1,20 +1,30 @@
 /**
- * Tradesoft Parts Index API client.
+ * Tradesoft Parts Index API client with Redis caching.
  *
- * Provides access to:
- * - VIN decode (find car by VIN, get parts for that car)
- * - Part info (full details, images, parameters, barcodes)
- * - Brand lookup (which brands make a part number)
- * - Cross-references / analogs (OEM ↔ aftermarket)
- * - Vehicle fitment (which cars a part fits)
- * - Car hierarchy (brands → models → generations → engines)
+ * All API responses are cached in the shared Valkey instance to reduce
+ * expensive external API calls. Cache is transparent — misses fall through
+ * to the live API, hits return instantly from Redis.
  *
  * API docs: https://api.parts-index.com/docs/
  * Auth: Authorization header with API key
  * IP whitelist: calls must come from whitelisted server IPs
  */
 
+import { cacheGet, cacheSet } from "../cache/redis.js";
+
 const API_BASE = "https://api.parts-index.com/v1";
+
+// TTLs in seconds
+const TTL = {
+  CAR_BRANDS: 90 * 24 * 3600,   // 90 days — brands never change
+  CAR_MODELS: 90 * 24 * 3600,   // 90 days — models never change
+  VIN_DECODE: 30 * 24 * 3600,   // 30 days — VIN is permanent
+  BRANDS_BY_CODE: 7 * 24 * 3600, // 7 days
+  PART_INFO: 7 * 24 * 3600,      // 7 days
+  RELATIONS: 7 * 24 * 3600,      // 7 days
+  FITMENT: 14 * 24 * 3600,       // 14 days
+  VIN_PARTS: 24 * 3600,          // 24 hours — most volatile
+};
 
 function getApiKey(): string {
   const key = process.env.PARTS_INDEX_API_KEY;
@@ -42,11 +52,21 @@ async function piGet<T>(path: string, params?: Record<string, string>): Promise<
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    const msg = body ? JSON.parse(body)?.message : `HTTP ${response.status}`;
+    let msg = `HTTP ${response.status}`;
+    try { msg = JSON.parse(body)?.message || msg; } catch {}
     throw new Error(`PartsIndex API error: ${msg}`);
   }
 
   return response.json() as Promise<T>;
+}
+
+/** Cache-aware wrapper: check cache → call API on miss → store result */
+async function cached<T>(key: string, ttl: number, fetcher: () => Promise<T>): Promise<T> {
+  const hit = await cacheGet<T>(key);
+  if (hit !== null) return hit;
+  const result = await fetcher();
+  cacheSet(key, result, ttl).catch(() => {}); // fire-and-forget
+  return result;
 }
 
 // ─── Types ────────────────────────────────────────────────
@@ -135,88 +155,88 @@ export interface PIVinResult {
   group: string;
 }
 
-// ─── VIN Decode ───────────────────────────────────────────
+// ─── VIN Decode (cached 30 days) ──────────────────────────
 
-/** Decode a VIN to find matching car(s). */
 export async function vinDecodeCars(vin: string): Promise<PIVinCar[]> {
-  const result = await piGet<{ list: PIVinCar[] }>("/parts-by-vin/cars", { vin });
-  return result.list || [];
+  return cached(`vin:${vin}`, TTL.VIN_DECODE, async () => {
+    const result = await piGet<{ list: PIVinCar[] }>("/parts-by-vin/cars", { vin });
+    return result.list || [];
+  });
 }
 
-/** Get parts for a VIN-decoded car. */
 export async function vinCarParts(carId: string, params?: {
   group?: string;
   query?: string;
   page?: string;
   perPage?: string;
 }): Promise<{ list: PIVinResult[]; pagination?: { total: number; page: number; perPage: number } }> {
-  return piGet("/parts-by-vin/cars/" + carId + "/results", params as Record<string, string>);
+  const key = `vin-parts:${carId}:${params?.group || ""}:${params?.query || ""}:${params?.page || "1"}`;
+  return cached(key, TTL.VIN_PARTS, () =>
+    piGet("/parts-by-vin/cars/" + carId + "/results", params as Record<string, string>),
+  );
 }
 
-// ─── Brand Lookup ─────────────────────────────────────────
+// ─── Brand Lookup (cached 7 days) ─────────────────────────
 
-/** Find brands that manufacture a given part code. */
 export async function brandsByPartCode(code: string): Promise<PIBrand[]> {
-  const result = await piGet<{ list: PIBrand[] }>("/brands/by-part-code", { code });
-  return result.list || [];
+  return cached(`brands-by-code:${code}`, TTL.BRANDS_BY_CODE, async () => {
+    const result = await piGet<{ list: PIBrand[] }>("/brands/by-part-code", { code });
+    return result.list || [];
+  });
 }
 
-/** Parse/normalize a brand name, get synonyms. */
 export async function brandsParse(query: string): Promise<PIBrand[]> {
-  const result = await piGet<{ list: PIBrand[] }>("/brands/parse", { query });
-  return result.list || [];
+  return cached(`brands-parse:${query}`, TTL.BRANDS_BY_CODE, async () => {
+    const result = await piGet<{ list: PIBrand[] }>("/brands/parse", { query });
+    return result.list || [];
+  });
 }
 
-// ─── Part Info (Entities) ─────────────────────────────────
+// ─── Part Info (cached 7 days) ────────────────────────────
 
-/** Get full part details by part code and brand ID. */
 export async function getPartInfo(code: string, brandId: string): Promise<PIEntity[]> {
-  const result = await piGet<{ list: PIEntity[] }>("/entities", { code, brandId });
-  return result.list || [];
+  return cached(`entity:${code}:${brandId}`, TTL.PART_INFO, async () => {
+    const result = await piGet<{ list: PIEntity[] }>("/entities", { code, brandId });
+    return result.list || [];
+  });
 }
 
-// ─── Cross-References / Analogs ───────────────────────────
+// ─── Cross-References (cached 7 days) ─────────────────────
 
-/**
- * Get cross-references for a part (OEM ↔ aftermarket).
- * Returns analog parts from other brands.
- */
 export async function getPartRelations(code: string, brandId: string): Promise<PIRelation[]> {
-  const result = await piGet<{ list: PIRelation[] }>("/relations", { code, brandId });
-  return result.list || [];
+  return cached(`relations:${code}:${brandId}`, TTL.RELATIONS, async () => {
+    const result = await piGet<{ list: PIRelation[] }>("/relations", { code, brandId });
+    return result.list || [];
+  });
 }
 
-// ─── Vehicle Fitment ──────────────────────────────────────
+// ─── Vehicle Fitment (cached 14 days) ─────────────────────
 
-/** Find which cars a part fits. */
 export async function getPartFitment(code: string, brandId: string): Promise<PICarApply[]> {
-  const result = await piGet<{ list: PICarApply[] }>("/cars", { code, brandId });
-  return result.list || [];
+  return cached(`fitment:${code}:${brandId}`, TTL.FITMENT, async () => {
+    const result = await piGet<{ list: PICarApply[] }>("/cars", { code, brandId });
+    return result.list || [];
+  });
 }
 
-// ─── Car Hierarchy ────────────────────────────────────────
+// ─── Car Hierarchy (cached 90 days) ───────────────────────
 
-/** Get all car brands. */
 export async function getCarBrands(query?: string): Promise<PICarBrand[]> {
-  const result = await piGet<{ list: PICarBrand[] }>("/car/brands", query ? { query } : undefined);
-  return result.list || [];
+  return cached(`car-brands:${query || "all"}`, TTL.CAR_BRANDS, async () => {
+    const result = await piGet<{ list: PICarBrand[] }>("/car/brands", query ? { query } : undefined);
+    return result.list || [];
+  });
 }
 
-/** Get models for a car brand. */
 export async function getCarModels(brandId: string): Promise<PICarModel[]> {
-  const result = await piGet<{ list: PICarModel[] }>(`/car/brands/${brandId}/models`);
-  return result.list || [];
+  return cached(`car-models:${brandId}`, TTL.CAR_MODELS, async () => {
+    const result = await piGet<{ list: PICarModel[] }>(`/car/brands/${brandId}/models`);
+    return result.list || [];
+  });
 }
 
 // ─── Convenience Wrappers ─────────────────────────────────
 
-/**
- * Full part enrichment: given a part code, get all available data.
- * 1. Find brands for the code
- * 2. Get full entity info from the first (or specified) brand
- * 3. Get cross-references
- * 4. Get vehicle fitment
- */
 export async function enrichPartData(code: string, brandId?: string): Promise<{
   brands: PIBrand[];
   entity: PIEntity | null;
@@ -224,7 +244,6 @@ export async function enrichPartData(code: string, brandId?: string): Promise<{
   fitment: PICarApply[];
   images: string[];
 }> {
-  // Step 1: find brands
   const brands = await brandsByPartCode(code);
   if (brands.length === 0) {
     return { brands: [], entity: null, crossReferences: [], fitment: [], images: [] };
@@ -232,7 +251,6 @@ export async function enrichPartData(code: string, brandId?: string): Promise<{
 
   const targetBrandId = brandId || brands[0].id;
 
-  // Step 2-4: parallel fetch
   const [entities, crossReferences, fitment] = await Promise.all([
     getPartInfo(code, targetBrandId).catch(() => [] as PIEntity[]),
     getPartRelations(code, targetBrandId).catch(() => [] as PIRelation[]),

@@ -14,8 +14,12 @@ import { cleanupStaleCarts } from "./storage/cart.js";
 import { cleanupExpiredPendingOrders } from "./storage/orders.js";
 import { startQueueProcessor } from "./sync/queueProcessor.js";
 import { resetStaleProcessingEvents, cleanupOldSyncRecords } from "./storage/sync.js";
+import { initRedisCache } from "./cache/redis.js";
 
 const app = express();
+
+// Initialize Redis cache for Parts Index API
+initRedisCache();
 const dev = process.env.NODE_ENV !== "production";
 const port = parseInt(process.env.PORT || process.env.PARTS_STORE_API_PORT || "5002", 10);
 
