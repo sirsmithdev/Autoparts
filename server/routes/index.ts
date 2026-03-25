@@ -20,6 +20,7 @@ import wishlistRoutes from "./wishlist.routes.js";
 import productsRoutes from "./products.routes.js";
 import partsIndexRoutes from "./partsIndex.routes.js";
 import customersRoutes from "./customers.routes.js";
+import accountingRoutes from "./accounting.routes.js";
 
 export function registerRoutes(app: Express): void {
   app.use(authRoutes);
@@ -40,4 +41,5 @@ export function registerRoutes(app: Express): void {
   app.use(productsRoutes);
   app.use(partsIndexRoutes);
   app.use(customersRoutes);
+  app.use(accountingRoutes);
 }
