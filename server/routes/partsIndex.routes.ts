@@ -5,7 +5,7 @@
  */
 
 import { Router } from "express";
-import { authenticateToken, optionalAuth } from "../middleware.js";
+import { authenticateToken, optionalAuth, requirePermission } from "../middleware.js";
 import * as pi from "../integrations/partsIndex.js";
 
 const router = Router();
@@ -224,7 +224,7 @@ router.get("/api/store/catalog/pi-car-models/:brandId", async (req, res) => {
  * Enrich a product's data from PartsIndex.
  * Fetches images, cross-references, and fitment data and optionally saves to DB.
  */
-router.post("/api/store/admin/products/:id/enrich", authenticateToken, async (req, res) => {
+router.post("/api/store/admin/products/:id/enrich", authenticateToken, requirePermission("products:manage"), async (req, res) => {
   try {
     const { code, brandId, saveImages, saveFitment } = req.body as {
       code: string;

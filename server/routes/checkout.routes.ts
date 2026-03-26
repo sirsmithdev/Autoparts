@@ -78,6 +78,7 @@ router.post("/api/store/checkout", authenticateToken, async (req, res) => {
       // --- Saved card flow ---
       const method = await pm.getPaymentMethod(body.paymentMethodId, req.customer!.customerId);
       if (!method || !method.panToken) {
+        orders.cancelOrder(order.id, "Invalid payment method").catch(() => {});
         return res.status(400).json({ message: "Invalid payment method" });
       }
 
@@ -94,10 +95,9 @@ router.post("/api/store/checkout", authenticateToken, async (req, res) => {
       });
 
       if (!spiResult.success) {
+        orders.cancelOrder(order.id, "Payment initiation failed").catch(() => {});
         return res.status(502).json({
           message: spiResult.error || "Payment gateway error",
-          orderId: order.id,
-          orderNumber: order.orderNumber,
         });
       }
 
@@ -133,10 +133,9 @@ router.post("/api/store/checkout", authenticateToken, async (req, res) => {
       });
 
       if (!spiResult.success) {
+        orders.cancelOrder(order.id, "Payment initiation failed").catch(() => {});
         return res.status(502).json({
           message: spiResult.error || "Payment gateway error",
-          orderId: order.id,
-          orderNumber: order.orderNumber,
         });
       }
 
@@ -250,14 +249,10 @@ router.post("/api/store/orders/:id/retry-payment", authenticateToken, async (req
     const callbackUrl = `${process.env.POWERTRANZ_CALLBACK_URL || `${process.env.BASE_URL || ""}/api/store/payment-callback`}`;
     const responseUrl = `${callbackUrl}?orderId=${orderId}`;
 
-    // Check for payment method in body
-    const paymentMethodId = req.body.paymentMethodId as string | undefined;
-    const cardDetails = req.body.cardDetails as {
-      cardPan: string;
-      cardCvv: string;
-      cardExpiration: string;
-      cardholderName: string;
-    } | undefined;
+    // Validate payment details with same schema as checkout
+    const retryBody = checkoutBodySchema.pick({ paymentMethodId: true, cardDetails: true }).parse(req.body);
+    const paymentMethodId = retryBody.paymentMethodId;
+    const cardDetails = retryBody.cardDetails;
 
     if (paymentMethodId) {
       // Saved card
@@ -328,13 +323,14 @@ router.post("/api/store/orders/:id/retry-payment", authenticateToken, async (req
 // ---------------------------------------------------------------------------
 
 function buildRedirectPage(path: string, errorMessage: string | null): string {
-  // Extract orderId from path for postMessage payload
-  const orderIdMatch = path.match(/\/orders\/([^?/]+)/);
+  const orderIdMatch = path.match(/\/orders\/([a-f0-9-]+)/i);
   const orderId = orderIdMatch ? orderIdMatch[1] : null;
   const success = !errorMessage && orderId;
   const prefix = process.env.NODE_ENV === "production" ? "/parts" : "";
   const fullPath = `${prefix}${path}`;
+  const origin = process.env.BASE_URL || "";
 
+  // All dynamic values go through JSON.stringify to prevent XSS
   return `<!DOCTYPE html>
 <html>
 <head><title>Processing payment...</title></head>
@@ -342,21 +338,19 @@ function buildRedirectPage(path: string, errorMessage: string | null): string {
   <p>Processing your payment...</p>
   <script>
     try {
-      // Send result to the opener window (checkout page that opened this popup)
       if (window.opener && !window.opener.closed) {
         window.opener.postMessage({
           type: 'powertranz-callback',
           success: ${success ? "true" : "false"},
-          orderId: ${orderId ? `'${orderId}'` : "null"},
-          error: ${errorMessage ? JSON.stringify(errorMessage) : "null"}
-        }, '*');
+          orderId: ${JSON.stringify(orderId)},
+          error: ${JSON.stringify(errorMessage)}
+        }, ${JSON.stringify(origin || "*")});
         window.close();
       } else {
-        // Fallback: redirect in current window
-        window.location.href = '${fullPath}';
+        window.location.href = ${JSON.stringify(fullPath)};
       }
     } catch (e) {
-      window.location.href = '${fullPath}';
+      window.location.href = ${JSON.stringify(fullPath)};
     }
   </script>
 </body>

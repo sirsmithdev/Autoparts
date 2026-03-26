@@ -4,6 +4,7 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
+import { timingSafeEqual } from "crypto";
 import { verifyToken } from "./auth.js";
 import { hasPermission, type Permission } from "./permissions.js";
 
@@ -140,7 +141,9 @@ export function validateSyncApiKey(
   const expected = process.env.SYNC_API_KEY;
   const provided = req.headers["x-sync-api-key"] as string | undefined;
 
-  if (!expected || !provided || provided !== expected) {
+  if (!expected || !provided ||
+      Buffer.byteLength(expected) !== Buffer.byteLength(provided) ||
+      !timingSafeEqual(Buffer.from(expected), Buffer.from(provided))) {
     res.status(401).json({ message: "Invalid or missing sync API key" });
     return;
   }

@@ -103,8 +103,15 @@ export async function cacheDel(key: string): Promise<void> {
 export async function cacheStats(): Promise<{ connected: boolean; keyCount: number }> {
   if (!redis || !connected) return { connected: false, keyCount: 0 };
   try {
-    const keys = await redis.keys(PREFIX + "*");
-    return { connected: true, keyCount: keys.length };
+    // Use SCAN instead of KEYS to avoid blocking Redis
+    let cursor = "0";
+    let count = 0;
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, "MATCH", PREFIX + "*", "COUNT", 100);
+      cursor = nextCursor;
+      count += keys.length;
+    } while (cursor !== "0");
+    return { connected: true, keyCount: count };
   } catch {
     return { connected: false, keyCount: 0 };
   }
