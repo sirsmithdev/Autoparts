@@ -53,25 +53,20 @@ type OrderStatus = OnlineStoreOrder["status"];
 export async function generateOrderNumber(): Promise<string> {
   const year = new Date().getFullYear();
   return db.transaction(async (tx) => {
+    // Use parameterized queries instead of sql.raw to prevent injection patterns
     const [rows] = await tx.execute(
-      sql.raw(
-        `SELECT * FROM \`online_order_number_sequence\` WHERE year = ${year} FOR UPDATE`,
-      ),
+      sql`SELECT * FROM online_order_number_sequence WHERE year = ${year} FOR UPDATE`,
     );
-    const seq = Array.isArray(rows) ? (rows[0] as any) : (rows as any);
+    const seq = Array.isArray(rows) ? (rows[0] as Record<string, unknown> | undefined) : undefined;
     if (!seq) {
       await tx.execute(
-        sql.raw(
-          `INSERT INTO \`online_order_number_sequence\` (year, last_number) VALUES (${year}, 1)`,
-        ),
+        sql`INSERT INTO online_order_number_sequence (year, last_number) VALUES (${year}, 1)`,
       );
       return `ORD-${year}-0001`;
     }
-    const nextNum = (seq.last_number || 0) + 1;
+    const nextNum = (Number(seq.last_number) || 0) + 1;
     await tx.execute(
-      sql.raw(
-        `UPDATE \`online_order_number_sequence\` SET last_number = ${nextNum} WHERE year = ${year}`,
-      ),
+      sql`UPDATE online_order_number_sequence SET last_number = ${nextNum} WHERE year = ${year}`,
     );
     return `ORD-${year}-${String(nextNum).padStart(4, "0")}`;
   });
@@ -488,8 +483,14 @@ export async function cancelOrder(
     return;
   }
 
-  // Restore stock in transaction
+  // Restore stock in transaction with atomic status check (prevents TOCTOU race)
   await db.transaction(async (tx) => {
+    // Re-check status inside transaction to prevent race condition
+    const [current] = await tx.select({ status: onlineStoreOrders.status })
+      .from(onlineStoreOrders).where(eq(onlineStoreOrders.id, orderId)).limit(1);
+    if (!current || !["placed", "confirmed", "picking"].includes(current.status)) {
+      throw new Error(`Cannot cancel order — status changed to "${current?.status || "unknown"}"`);
+    }
     for (const item of order.items) {
       await tx.execute(
         sql`UPDATE products SET quantity = quantity + ${item.quantity} WHERE id = ${item.productId}`,
@@ -729,7 +730,8 @@ export async function cleanupExpiredPendingOrders(): Promise<number> {
         eq(onlineStoreOrders.status, "pending_payment"),
         sql`${onlineStoreOrders.createdAt} < ${cutoff}`,
       ),
-    );
+    )
+    .limit(50); // Process at most 50 per cron tick to prevent long-running cleanup
 
   for (const order of expired) {
     // Restore stock in DB

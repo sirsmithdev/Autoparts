@@ -116,9 +116,31 @@ export function requireStaff(
  * Factory that creates middleware requiring the customer to have specific permission(s).
  * Must be used after authenticateToken.
  * If multiple permissions are given, the customer must have at least one (OR logic).
+ * Re-checks role from DB to catch stale JWT claims (e.g., after demotion).
  */
 export function requirePermission(...permissions: Permission[]) {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    // Re-check role from DB to prevent stale JWT claims
+    if (req.customer?.customerId) {
+      try {
+        const { db } = await import("./db.js");
+        const { customers } = await import("./schema.js");
+        const { eq } = await import("drizzle-orm");
+        const [fresh] = await db.select({ role: customers.role, isActive: customers.isActive })
+          .from(customers).where(eq(customers.id, req.customer.customerId)).limit(1);
+        if (fresh) {
+          req.customer.role = fresh.role ?? null;
+          req.customer.isAdmin = fresh.role === "admin";
+          if (!fresh.isActive) {
+            res.status(403).json({ message: "Account deactivated" });
+            return;
+          }
+        }
+      } catch {
+        // If DB check fails, fall through to JWT role (graceful degradation)
+      }
+    }
+
     const role = req.customer?.role ?? null;
     const hasAny = permissions.some((p) => hasPermission(role, p));
     if (!hasAny) {
