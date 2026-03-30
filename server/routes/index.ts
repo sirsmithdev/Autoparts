@@ -21,6 +21,7 @@ import productsRoutes from "./products.routes.js";
 import partsIndexRoutes from "./partsIndex.routes.js";
 import customersRoutes from "./customers.routes.js";
 import accountingRoutes from "./accounting.routes.js";
+import suppliersRoutes from "./suppliers.routes.js";
 
 export function registerRoutes(app: Express): void {
   app.use(authRoutes);
@@ -42,4 +43,5 @@ export function registerRoutes(app: Express): void {
   app.use(partsIndexRoutes);
   app.use(customersRoutes);
   app.use(accountingRoutes);
+  app.use(suppliersRoutes);
 }

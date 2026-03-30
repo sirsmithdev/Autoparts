@@ -92,7 +92,7 @@ export async function createBin(data: {
 
 export async function updateBin(
   id: string,
-  data: Partial<{ description: string; isActive: boolean }>,
+  data: Partial<{ binCode: string; locationId: string; description: string; isActive: boolean }>,
 ): Promise<void> {
   await db
     .update(warehouseBins)
@@ -348,6 +348,9 @@ export async function getStockMovementHistory(
   filters?: {
     productId?: string;
     movementType?: string;
+    productSearch?: string;
+    startDate?: string;
+    endDate?: string;
     page?: number;
     limit?: number;
   },
@@ -363,6 +366,22 @@ export async function getStockMovementHistory(
   if (filters?.movementType) {
     conditions.push(
       sql`${stockMovements.movementType} = ${filters.movementType}`,
+    );
+  }
+  if (filters?.productSearch) {
+    const term = `%${filters.productSearch.toLowerCase()}%`;
+    conditions.push(
+      sql`${stockMovements.productId} IN (SELECT id FROM products WHERE LOWER(name) LIKE ${term})`,
+    );
+  }
+  if (filters?.startDate) {
+    conditions.push(
+      sql`${stockMovements.createdAt} >= ${filters.startDate}`,
+    );
+  }
+  if (filters?.endDate) {
+    conditions.push(
+      sql`${stockMovements.createdAt} <= ${filters.endDate}`,
     );
   }
 
@@ -383,6 +402,44 @@ export async function getStockMovementHistory(
   ]);
 
   return { movements, total: totalRow.total };
+}
+
+// ─── Low Stock Alerts ────────────────────────────────────
+
+export async function getLowStockProducts(): Promise<
+  Array<{
+    id: string;
+    name: string;
+    partNumber: string;
+    quantity: number;
+    reorderPoint: number;
+  }>
+> {
+  const rows = await db
+    .select({
+      id: products.id,
+      name: products.name,
+      partNumber: products.partNumber,
+      quantity: products.quantity,
+      reorderPoint: products.reorderPoint,
+    })
+    .from(products)
+    .where(
+      and(
+        eq(products.isActive, true),
+        sql`${products.reorderPoint} > 0`,
+        sql`${products.quantity} <= ${products.reorderPoint}`,
+      ),
+    )
+    .orderBy(sql`${products.quantity} - ${products.reorderPoint}`, asc(products.name));
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name as string,
+    partNumber: r.partNumber,
+    quantity: r.quantity,
+    reorderPoint: r.reorderPoint,
+  }));
 }
 
 // ─── Stock Receipts ───────────────────────────────────────

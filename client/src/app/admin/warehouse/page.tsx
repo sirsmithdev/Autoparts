@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   MapPin, Grid3X3, BarChart3, Plus, Pencil, Power, Loader2,
   ChevronDown, Package, ArrowRightLeft, ChevronRight,
+  SlidersHorizontal, AlertTriangle, RefreshCw, ClipboardCheck, AlertCircle,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -342,12 +343,134 @@ function LocationsTab() {
   );
 }
 
+/* ---------- Bin Edit Dialog ---------- */
+
+function BinEditDialog({
+  open,
+  onClose,
+  bin,
+  locations,
+}: {
+  open: boolean;
+  onClose: () => void;
+  bin: WarehouseBin | null;
+  locations: WarehouseLocation[];
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [binCode, setBinCode] = useState("");
+  const [description, setDescription] = useState("");
+  const [locationId, setLocationId] = useState("");
+
+  useEffect(() => {
+    if (open && bin) {
+      setBinCode(bin.binCode);
+      setDescription(bin.description || "");
+      setLocationId(bin.locationId);
+    }
+  }, [open, bin]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open, onClose]);
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      return api(`/api/store/admin/warehouse/bins/${bin!.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ binCode, description, locationId }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["warehouse-bins"] });
+      toast({ title: "Bin updated" });
+      onClose();
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  if (!open || !bin) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div role="dialog" aria-modal="true" className="bg-card border rounded-md p-6 w-full max-w-sm shadow-lg space-y-4" onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold">Edit Bin</h3>
+        <div className="space-y-3">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Bin Code</label>
+            <input
+              className="w-full mt-1 border rounded-lg px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              value={binCode}
+              onChange={(e) => setBinCode(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Location</label>
+            <select
+              className="w-full mt-1 border rounded-lg px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              value={locationId}
+              onChange={(e) => setLocationId(e.target.value)}
+            >
+              {locations.filter(l => l.isActive).map((loc) => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Description</label>
+            <input
+              placeholder="Optional description"
+              className="w-full mt-1 border rounded-lg px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <button onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-accent transition-colors">Cancel</button>
+          <button
+            onClick={() => mutation.mutate()}
+            disabled={!binCode.trim() || mutation.isPending}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          >
+            {mutation.isPending ? "Saving..." : "Update"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Bins Tab ---------- */
 
 function BinsTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [expandedBin, setExpandedBin] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingBin, setEditingBin] = useState<WarehouseBin | null>(null);
+
+  const deactivateBinMutation = useMutation({
+    mutationFn: (id: string) =>
+      api(`/api/store/admin/warehouse/bins/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive: false }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["warehouse-bins"] });
+      toast({ title: "Bin deactivated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
 
   const { data: locations = [] } = useQuery<WarehouseLocation[]>({
     queryKey: ["warehouse-locations"],
@@ -403,13 +526,14 @@ function BinsTab() {
                 <th className="text-left p-3 font-medium text-muted-foreground">Location</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Description</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                <th className="w-24 p-3 text-right font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">Loading...</td></tr>
+                <tr><td colSpan={6} className="text-center py-12 text-muted-foreground">Loading...</td></tr>
               ) : bins.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">No bins found</td></tr>
+                <tr><td colSpan={6} className="text-center py-12 text-muted-foreground">No bins found</td></tr>
               ) : bins.map((bin) => (
                 <>
                   <tr
@@ -424,10 +548,31 @@ function BinsTab() {
                     <td className="p-3">{bin.locationName}</td>
                     <td className="p-3 text-muted-foreground">{bin.description || "\u2014"}</td>
                     <td className="p-3"><StatusDot active={bin.isActive} /></td>
+                    <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="inline-flex gap-1">
+                        <button
+                          onClick={() => { setEditingBin(bin); setEditDialogOpen(true); }}
+                          className="p-1.5 hover:bg-accent rounded transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                        {bin.isActive && (
+                          <button
+                            onClick={() => { if (!window.confirm(`Deactivate bin "${bin.binCode}"?`)) return; deactivateBinMutation.mutate(bin.id); }}
+                            disabled={deactivateBinMutation.isPending}
+                            className="p-1.5 hover:bg-accent rounded transition-colors"
+                            title="Deactivate"
+                          >
+                            <Power className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                   {expandedBin === bin.id && (
                     <tr key={`${bin.id}-contents`}>
-                      <td colSpan={5} className="bg-muted/20 px-6 py-4">
+                      <td colSpan={6} className="bg-muted/20 px-6 py-4">
                         <p className="text-xs font-medium text-muted-foreground mb-2">Bin Contents</p>
                         {contentsLoading ? (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
@@ -459,6 +604,7 @@ function BinsTab() {
       </div>
 
       <BinDialog open={dialogOpen} onClose={() => setDialogOpen(false)} locations={locations} />
+      <BinEditDialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} bin={editingBin} locations={locations} />
     </div>
   );
 }
@@ -523,10 +669,46 @@ function OverviewTab() {
             <Package className="h-4 w-4 text-primary" /> Receive Stock
           </Link>
           <Link
+            href="/admin/warehouse/transfer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <ArrowRightLeft className="h-4 w-4 text-primary" /> Transfer Stock
+          </Link>
+          <Link
+            href="/admin/warehouse/adjust"
+            className="inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <SlidersHorizontal className="h-4 w-4 text-primary" /> Adjust Stock
+          </Link>
+          <Link
+            href="/admin/warehouse/damage"
+            className="inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <AlertTriangle className="h-4 w-4 text-primary" /> Record Damage
+          </Link>
+          <Link
+            href="/admin/warehouse/reconciliation"
+            className="inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <RefreshCw className="h-4 w-4 text-primary" /> Reconciliation
+          </Link>
+          <Link
+            href="/admin/warehouse/cycle-counts"
+            className="inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <ClipboardCheck className="h-4 w-4 text-primary" /> Cycle Counts
+          </Link>
+          <Link
+            href="/admin/warehouse/low-stock"
+            className="inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <AlertCircle className="h-4 w-4 text-primary" /> Low Stock Alerts
+          </Link>
+          <Link
             href="/admin/warehouse/movements"
             className="inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium hover:bg-accent transition-colors"
           >
-            <ArrowRightLeft className="h-4 w-4 text-primary" /> Stock Movements
+            <BarChart3 className="h-4 w-4 text-primary" /> Stock Movements
           </Link>
         </div>
       </div>

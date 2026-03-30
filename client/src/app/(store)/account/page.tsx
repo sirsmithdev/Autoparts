@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, User, MapPin, Lock, CheckCircle2, AlertCircle, Package, RotateCcw, ChevronRight, Car, Plus, Trash2, Star } from "lucide-react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -505,6 +505,8 @@ function GarageTab() {
 export default function AccountPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") || "profile";
 
   useEffect(() => { if (!authLoading && !isAuthenticated) router.replace("/login?redirect=/account"); }, [authLoading, isAuthenticated, router]);
 
@@ -554,7 +556,7 @@ export default function AccountPage() {
         </Link>
       </div>
 
-      <Tabs defaultValue="profile">
+      <Tabs defaultValue={initialTab}>
         <TabsList className="w-full">
           <TabsTrigger value="profile" className="flex-1 gap-1.5">
             <User className="h-4 w-4" /> Profile

@@ -15,6 +15,8 @@ import {
   onlineStoreOrderItems,
   onlineStoreOrders,
   products,
+  productBinAssignments,
+  stockMovements,
   warehouseBins,
   type PickList,
   type PickListItem,
@@ -369,7 +371,40 @@ export async function completePickList(id: string): Promise<void> {
 }
 
 /**
- * Cancel a pick list. Only from pending or assigned status.
+ * Skip a pick list item. Sets status to "skipped" with quantityPicked = 0.
+ */
+export async function skipItem(
+  pickListId: string,
+  itemId: string,
+): Promise<void> {
+  const [item] = await db
+    .select()
+    .from(pickListItems)
+    .where(
+      and(
+        eq(pickListItems.id, itemId),
+        eq(pickListItems.pickListId, pickListId),
+      ),
+    )
+    .limit(1);
+
+  if (!item) throw new Error("Pick list item not found");
+  if (item.status === "picked" || item.status === "skipped") {
+    throw new Error(`Item already in "${item.status}" status`);
+  }
+
+  await db
+    .update(pickListItems)
+    .set({
+      quantityPicked: 0,
+      status: "skipped",
+      pickedAt: new Date(),
+    })
+    .where(eq(pickListItems.id, itemId));
+}
+
+/**
+ * Cancel a pick list. Allowed from pending, assigned, or in_progress status.
  */
 export async function cancelPickList(id: string): Promise<void> {
   const [pickList] = await db
@@ -380,7 +415,7 @@ export async function cancelPickList(id: string): Promise<void> {
 
   if (!pickList) throw new Error("Pick list not found");
 
-  const cancellableStatuses = ["pending", "assigned"];
+  const cancellableStatuses = ["pending", "assigned", "in_progress"];
   if (!cancellableStatuses.includes(pickList.status)) {
     throw new Error(
       `Cannot cancel pick list in "${pickList.status}" status`,

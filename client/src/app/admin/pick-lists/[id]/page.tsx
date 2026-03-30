@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, CheckCircle, Package, UserPlus, Play, X,
-  ClipboardList, Loader2, AlertTriangle,
+  ClipboardList, Loader2, AlertTriangle, SkipForward,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -113,6 +113,21 @@ export default function AdminPickListDetailPage() {
       toast({ title: "Item picked" });
       setPickDialog(null);
       setPickQuantity("");
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const skipItemMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      return api(`/api/store/admin/pick-lists/${pickListId}/items/${itemId}/skip`, {
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-pick-list", pickListId] });
+      toast({ title: "Item skipped" });
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -279,12 +294,21 @@ export default function AdminPickListDetailPage() {
                     {pickList.status === "in_progress" && (
                       <td className="p-3">
                         {item.status === "pending" && (
-                          <button
-                            onClick={() => { setPickQuantity(String(item.quantityRequired)); setPickDialog(item); }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
-                          >
-                            <Package className="h-3.5 w-3.5" /> Pick
-                          </button>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => { setPickQuantity(String(item.quantityRequired)); setPickDialog(item); }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
+                            >
+                              <Package className="h-3.5 w-3.5" /> Pick
+                            </button>
+                            <button
+                              onClick={() => skipItemMutation.mutate(item.id)}
+                              disabled={skipItemMutation.isPending}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-accent disabled:opacity-50 transition-colors"
+                            >
+                              <SkipForward className="h-3.5 w-3.5" /> Skip
+                            </button>
+                          </div>
                         )}
                       </td>
                     )}

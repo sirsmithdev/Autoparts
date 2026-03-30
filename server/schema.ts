@@ -88,6 +88,7 @@ export const products = mysqlTable("products", {
   salePrice: decimal("sale_price", { precision: 10, scale: 2 }).notNull(),
   quantity: int("quantity").notNull().default(0),
   lowStockThreshold: int("low_stock_threshold").notNull().default(10),
+  reorderPoint: int("reorder_point").notNull().default(0),
   description: text("description"),
   longDescription: text("long_description"),
   manufacturer: text("manufacturer"),
@@ -621,6 +622,44 @@ export const wishlists = mysqlTable("wishlists", {
   uniqueIndex("idx_wishlists_customer_product").on(table.customerId, table.productId),
 ]);
 
+// ==================== Suppliers Table (1) ====================
+
+export const suppliers = mysqlTable("suppliers", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
+  name: varchar("name", { length: 255 }).notNull(),
+  contactName: varchar("contact_name", { length: 255 }),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  address: text("address"),
+  notes: text("notes"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ==================== Cycle Count Tables (2) ====================
+
+export const cycleCounts = mysqlTable("cycle_counts", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
+  locationId: varchar("location_id", { length: 36 }).references(() => warehouseLocations.id),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  startedBy: varchar("started_by", { length: 36 }),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const cycleCountItems = mysqlTable("cycle_count_items", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
+  cycleCountId: varchar("cycle_count_id", { length: 36 }).references(() => cycleCounts.id),
+  productId: varchar("product_id", { length: 36 }).references(() => products.id),
+  binId: varchar("bin_id", { length: 36 }).references(() => warehouseBins.id),
+  expectedQuantity: int("expected_quantity").notNull(),
+  actualQuantity: int("actual_quantity"),
+  variance: int("variance"),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  countedAt: timestamp("counted_at"),
+});
+
 // ==================== Type Exports ====================
 
 // Core
@@ -745,3 +784,13 @@ export const staffInvites = mysqlTable("staff_invites", {
 
 export type StaffActivityLog = typeof staffActivityLog.$inferSelect;
 export type StaffInvite = typeof staffInvites.$inferSelect;
+
+// Suppliers
+export type Supplier = typeof suppliers.$inferSelect;
+export type InsertSupplier = typeof suppliers.$inferInsert;
+
+// Cycle Counts
+export type CycleCount = typeof cycleCounts.$inferSelect;
+export type InsertCycleCount = typeof cycleCounts.$inferInsert;
+export type CycleCountItem = typeof cycleCountItems.$inferSelect;
+export type InsertCycleCountItem = typeof cycleCountItems.$inferInsert;

@@ -126,10 +126,16 @@ function ProductSearch({
 
 /* ---------- Create Receipt Form ---------- */
 
+interface Supplier {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
 function CreateReceiptForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [supplierName, setSupplierName] = useState("");
+  const [supplierId, setSupplierId] = useState("");
   const [notes, setNotes] = useState("");
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   let nextKey = useRef(0);
@@ -137,6 +143,11 @@ function CreateReceiptForm() {
   const { data: bins = [] } = useQuery<WarehouseBin[]>({
     queryKey: ["warehouse-bins", "all"],
     queryFn: () => api<WarehouseBin[]>("/api/store/admin/warehouse/bins"),
+  });
+
+  const { data: suppliers = [] } = useQuery<Supplier[]>({
+    queryKey: ["admin-suppliers"],
+    queryFn: () => api<Supplier[]>("/api/store/admin/suppliers"),
   });
 
   const addLineItem = useCallback((product: ProductLookup) => {
@@ -169,7 +180,7 @@ function CreateReceiptForm() {
       return api("/api/store/admin/warehouse/receipts", {
         method: "POST",
         body: JSON.stringify({
-          supplierName: supplierName || null,
+          supplierId: supplierId || null,
           notes: notes || null,
           action,
           items: lineItems.map(({ productId, binId, quantity, unitCost }) => ({
@@ -184,7 +195,7 @@ function CreateReceiptForm() {
     onSuccess: (_, action) => {
       queryClient.invalidateQueries({ queryKey: ["warehouse-receipts"] });
       toast({ title: action === "draft" ? "Draft receipt created" : "Stock received successfully" });
-      setSupplierName("");
+      setSupplierId("");
       setNotes("");
       setLineItems([]);
     },
@@ -201,13 +212,23 @@ function CreateReceiptForm() {
       <div className="p-5 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-muted-foreground">Supplier Name</label>
-            <input
-              placeholder="Optional"
-              className="w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-              value={supplierName}
-              onChange={(e) => setSupplierName(e.target.value)}
-            />
+            <label className="text-sm font-medium text-muted-foreground">Supplier</label>
+            {suppliers.filter((s) => s.isActive).length === 0 ? (
+              <p className="text-sm text-muted-foreground mt-1">
+                No suppliers found. <Link href="/admin/suppliers" className="text-primary hover:underline">Add a supplier first</Link>
+              </p>
+            ) : (
+              <select
+                className="w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                value={supplierId}
+                onChange={(e) => setSupplierId(e.target.value)}
+              >
+                <option value="">Select supplier (optional)</option>
+                {suppliers.filter((s) => s.isActive).map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className="text-sm font-medium text-muted-foreground">Notes</label>

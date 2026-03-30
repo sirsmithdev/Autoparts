@@ -29,6 +29,13 @@ import {
   enqueueStockRestore,
 } from "../sync/stockSync.js";
 import { createPickListForOrder } from "./pickLists.js";
+import {
+  selectBinsForPicking,
+} from "./warehouse.js";
+import {
+  productBinAssignments,
+  stockMovements,
+} from "../schema.js";
 import { randomUUID } from "crypto";
 import * as email from "../email.js";
 
@@ -187,6 +194,33 @@ export async function createPendingOrder(params: {
       );
       if ((updateResult as any).affectedRows === 0)
         throw new Error(`Insufficient stock for ${prod.name}`);
+
+      // W8: Reserve stock from bin assignments
+      try {
+        const bins = await selectBinsForPicking(ci.productId, ci.quantity);
+        for (const bin of bins) {
+          // Decrement bin assignment
+          await tx.execute(
+            sql`UPDATE product_bin_assignments SET quantity = quantity - ${bin.quantity}, updated_at = NOW() WHERE product_id = ${ci.productId} AND bin_id = ${bin.binId} AND quantity >= ${bin.quantity}`,
+          );
+
+          // Write reserved stock movement
+          await tx.insert(stockMovements).values({
+            id: randomUUID(),
+            productId: ci.productId,
+            binId: bin.binId,
+            movementType: "reserved",
+            quantity: -bin.quantity,
+            referenceType: "online_order",
+            referenceId: orderId,
+            notes: `Reserved for order`,
+            performedBy: "system",
+          });
+        }
+      } catch {
+        // If bin selection fails (e.g., no bin assignments), stock was still
+        // decremented from products.quantity above — reservation is best-effort
+      }
 
       const unitPrice = parseFloat(prod.salePrice);
       const lineTotal = unitPrice * ci.quantity;
@@ -449,6 +483,9 @@ async function cancelPendingOrder(orderId: string): Promise<void> {
         sql`UPDATE products SET quantity = quantity + ${item.quantity} WHERE id = ${item.productId}`,
       );
     }
+
+    // W8: Restore reserved bin quantities
+    await restoreReservedBinStock(tx, orderId);
   });
 }
 
@@ -496,6 +533,10 @@ export async function cancelOrder(
         sql`UPDATE products SET quantity = quantity + ${item.quantity} WHERE id = ${item.productId}`,
       );
     }
+
+    // W8: Restore reserved bin quantities
+    await restoreReservedBinStock(tx, orderId);
+
     await tx
       .update(onlineStoreOrders)
       .set({
@@ -752,6 +793,50 @@ export async function cleanupExpiredPendingOrders(): Promise<number> {
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * W8: Restore bin quantities for reserved stock when an order is cancelled.
+ * Finds all "reserved" stock_movements for the order and reverses them.
+ */
+async function restoreReservedBinStock(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  orderId: string,
+): Promise<void> {
+  // Find all reserved movements for this order
+  const reservedMovements = await tx
+    .select()
+    .from(stockMovements)
+    .where(
+      and(
+        sql`${stockMovements.movementType} = 'reserved'`,
+        eq(stockMovements.referenceType, "online_order"),
+        eq(stockMovements.referenceId, orderId),
+      ),
+    );
+
+  for (const movement of reservedMovements) {
+    const restoreQty = Math.abs(movement.quantity);
+    if (restoreQty <= 0 || !movement.binId) continue;
+
+    // Restore bin assignment quantity
+    await tx.execute(
+      sql`UPDATE product_bin_assignments SET quantity = quantity + ${restoreQty}, updated_at = NOW() WHERE product_id = ${movement.productId} AND bin_id = ${movement.binId}`,
+    );
+
+    // Write unreserved movement
+    await tx.insert(stockMovements).values({
+      id: randomUUID(),
+      productId: movement.productId,
+      binId: movement.binId,
+      movementType: "unreserved",
+      quantity: restoreQty,
+      referenceType: "online_order",
+      referenceId: orderId,
+      notes: "Unreserved due to order cancellation",
+      performedBy: "system",
+    });
+  }
+}
 
 /**
  * Map order items to the shape expected by enqueueStockDecrement / enqueueStockRestore.
