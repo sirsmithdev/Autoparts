@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -502,7 +502,7 @@ function GarageTab() {
   );
 }
 
-export default function AccountPage() {
+function AccountPageInner() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -597,5 +597,13 @@ export default function AccountPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense fallback={<div className="max-w-2xl mx-auto px-4 sm:px-6 py-16 text-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" /></div>}>
+      <AccountPageInner />
+    </Suspense>
   );
 }
