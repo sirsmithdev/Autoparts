@@ -38,7 +38,7 @@ export default function OrderDetailPage() {
     id: string; orderNumber: string; status: string; total: string; subtotal: string; taxAmount: string; deliveryFee: string;
     deliveryMethod: string; deliveryParish?: string; deliveryAddress?: string; trackingNumber?: string; createdAt: string;
     placedAt?: string; deliveredAt?: string; pickupReadyAt?: string; pickupCode?: string;
-    items: Array<{ id: string; partId: string; partName: string; partNumber: string; quantity: number; unitPrice: string; lineTotal: string }>;
+    items: Array<{ id: string; productId: string; productName: string; productNumber: string; quantity: number; unitPrice: string; lineTotal: string }>;
   }>({
     queryKey: ["my-order", id],
     queryFn: () => api(`/api/store/orders/${id}`),
@@ -184,10 +184,10 @@ export default function OrderDetailPage() {
           {order.items.map(item => (
             <div key={item.id} className="flex items-center justify-between p-4 gap-4">
               <div className="min-w-0">
-                <Link href={`/parts/${item.partId}`} className="text-sm font-medium hover:text-primary transition-colors line-clamp-1">
-                  {item.partName}
+                <Link href={`/parts/${item.productId}`} className="text-sm font-medium hover:text-primary transition-colors line-clamp-1">
+                  {item.productName}
                 </Link>
-                <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.partNumber}</p>
+                <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.productNumber}</p>
               </div>
               <div className="text-right shrink-0">
                 <p className="text-sm font-medium">{formatPrice(item.lineTotal)}</p>

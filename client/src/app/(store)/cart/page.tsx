@@ -236,7 +236,7 @@ function GuestCart() {
 function ServerCart() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: cartData, isLoading } = useQuery<{ items: Array<{ id: string; partId: string; quantity: number; currentPrice: string; priceChanged: boolean; stockStatus: string; part: { name: string; partNumber: string; imageUrl?: string | null } }>; itemCount: number }>({
+  const { data: cartData, isLoading } = useQuery<{ items: Array<{ id: string; productId: string; quantity: number; currentPrice: string; priceChanged: boolean; stockStatus: string; product: { name: string; partNumber: string; imageUrl?: string | null } }>; itemCount: number }>({
     queryKey: ["server-cart"],
     queryFn: () => api("/api/store/cart"),
   });
@@ -264,10 +264,10 @@ function ServerCart() {
 
   const tableItems = items.map(item => ({
     id: item.id,
-    partId: item.partId,
-    name: item.part.name,
-    partNumber: item.part.partNumber,
-    imageUrl: item.part.imageUrl,
+    partId: item.productId,
+    name: item.product.name,
+    partNumber: item.product.partNumber,
+    imageUrl: item.product.imageUrl,
     price: item.currentPrice,
     quantity: item.quantity,
     stockBadge: <StockBadge status={item.stockStatus} />,

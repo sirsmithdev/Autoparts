@@ -622,6 +622,17 @@ export const wishlists = mysqlTable("wishlists", {
   uniqueIndex("idx_wishlists_customer_product").on(table.customerId, table.productId),
 ]);
 
+// ==================== Newsletter ====================
+
+export const newsletterSubscribers = mysqlTable("newsletter_subscribers", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => randomUUID()),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  subscribedAt: timestamp("subscribed_at").defaultNow().notNull(),
+});
+
+export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
+export type InsertNewsletterSubscriber = typeof newsletterSubscribers.$inferInsert;
+
 // ==================== Suppliers Table (1) ====================
 
 export const suppliers = mysqlTable("suppliers", {

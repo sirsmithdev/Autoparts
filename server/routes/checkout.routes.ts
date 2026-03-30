@@ -210,7 +210,7 @@ router.post("/api/store/payment-callback", async (req, res) => {
       // Mark order as paid
       const txId = payment.transactionId || payment.referenceNumber || callback.spiToken;
       await orders.confirmOrderPayment(orderId, txId);
-      return res.status(200).send(buildRedirectPage(`/orders/${orderId}`, null));
+      return res.status(200).send(buildRedirectPage(`/checkout/success?orderId=${orderId}`, null));
     }
 
     // Payment declined — order stays pending_payment (cleaned up by cron)
@@ -323,7 +323,7 @@ router.post("/api/store/orders/:id/retry-payment", authenticateToken, async (req
 // ---------------------------------------------------------------------------
 
 function buildRedirectPage(path: string, errorMessage: string | null): string {
-  const orderIdMatch = path.match(/\/orders\/([a-f0-9-]+)/i);
+  const orderIdMatch = path.match(/\/orders\/([a-f0-9-]+)/i) || path.match(/[?&]orderId=([a-f0-9-]+)/i);
   const orderId = orderIdMatch ? orderIdMatch[1] : null;
   const success = !errorMessage && orderId;
   const prefix = process.env.NODE_ENV === "production" ? "/parts" : "";

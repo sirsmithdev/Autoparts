@@ -1,16 +1,29 @@
 "use client";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 export function NewsletterBanner() {
   const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    toast({ title: "Subscribed!", description: "You'll receive our latest deals and updates." });
-    setEmail("");
+    if (!email.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      await api("/api/store/newsletter/subscribe", {
+        method: "POST",
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      toast({ title: "Subscribed!", description: "You'll receive our latest deals and updates." });
+      setEmail("");
+    } catch {
+      toast({ title: "Failed to subscribe", description: "Please try again later.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -35,9 +48,10 @@ export function NewsletterBanner() {
           />
           <button
             type="submit"
-            className="px-6 py-2.5 bg-foreground text-white text-sm font-medium rounded-r-md hover:bg-foreground/90 transition-colors shrink-0"
+            disabled={submitting}
+            className="px-6 py-2.5 bg-foreground text-white text-sm font-medium rounded-r-md hover:bg-foreground/90 transition-colors shrink-0 disabled:opacity-50"
           >
-            Subscribe
+            {submitting ? "Subscribing..." : "Subscribe"}
           </button>
         </form>
       </div>

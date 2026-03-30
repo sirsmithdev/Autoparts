@@ -32,23 +32,9 @@ function CheckoutFailureContent() {
     enabled: isAuthenticated && !!orderId,
   });
 
-  const retryMutation = useMutation({
-    mutationFn: () => api<{ redirectData?: string }>(`/api/store/orders/${orderId}/retry-payment`, { method: "POST" }),
-    onSuccess: (result) => {
-      if (result.redirectData) {
-        const w = window.open("", "_blank", "width=600,height=700");
-        if (w) {
-          w.document.write(result.redirectData);
-          w.document.close();
-        } else {
-          setError("Payment window was blocked by your browser. Please allow popups and try again.");
-        }
-      } else {
-        router.push(`/checkout/success?orderId=${orderId}`);
-      }
-    },
-    onError: (err: Error) => setError(err.message || "Failed to retry payment"),
-  });
+  const handleRetry = () => {
+    router.push(`/checkout?retryOrderId=${orderId}`);
+  };
 
   const cancelMutation = useMutation({
     mutationFn: () => api(`/api/store/orders/${orderId}/cancel`, { method: "POST", body: JSON.stringify({ reason: "Customer cancelled after payment failure" }) }),
@@ -111,19 +97,15 @@ function CheckoutFailureContent() {
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-3">
         <button
-          onClick={() => { setError(""); retryMutation.mutate(); }}
-          disabled={retryMutation.isPending || cancelMutation.isPending}
+          onClick={handleRetry}
+          disabled={cancelMutation.isPending}
           className="flex-1 py-3 bg-primary text-primary-foreground rounded-lg font-semibold text-sm text-center hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {retryMutation.isPending ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Retrying...</>
-          ) : (
-            <><CreditCard className="h-4 w-4" /> Try Again</>
-          )}
+          <CreditCard className="h-4 w-4" /> Try Again
         </button>
         <button
           onClick={() => { setError(""); cancelMutation.mutate(); }}
-          disabled={retryMutation.isPending || cancelMutation.isPending}
+          disabled={cancelMutation.isPending}
           className="flex-1 py-3 border border-destructive/30 text-destructive rounded-lg font-semibold text-sm text-center hover:bg-destructive/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {cancelMutation.isPending ? (

@@ -44,11 +44,18 @@ interface HeldCart {
   heldAt: string;
 }
 
-const TAX_RATE = 0.15;
+const DEFAULT_TAX_RATE = 0.15;
 
 export default function PosTerminalPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch tax rate from settings
+  const { data: publicSettings } = useQuery<{ taxRate: string; taxName: string }>({
+    queryKey: ["public-settings"],
+    queryFn: () => api("/api/store/settings/public"),
+  });
+  const TAX_RATE = publicSettings ? parseFloat(publicSettings.taxRate) / 100 : DEFAULT_TAX_RATE;
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Session

@@ -15,8 +15,7 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 
 interface DeliveryZone { id: string; name: string; parishes: string[]; deliveryFee: string; oversizedSurcharge: string; estimatedDays: number }
 interface SavedCard { id: string; cardBrand: string; maskedPan: string; isDefault: boolean }
-
-const TAX_RATE = 0.15; // 15% GCT — matches store_settings default
+interface PublicSettings { taxRate: string; taxName: string; currency: string; currencySymbol: string }
 
 export default function CheckoutPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -40,8 +39,15 @@ export default function CheckoutPage() {
 
   useEffect(() => { if (!authLoading && !isAuthenticated) router.replace("/login?redirect=/checkout"); }, [authLoading, isAuthenticated, router]);
 
+  const { data: publicSettings } = useQuery<PublicSettings>({
+    queryKey: ["public-settings"],
+    queryFn: () => api("/api/store/settings/public"),
+  });
+  const taxRate = publicSettings ? parseFloat(publicSettings.taxRate) / 100 : 0.15;
+  const taxName = publicSettings?.taxName || "GCT";
+
   const { data: zones = [] } = useQuery<DeliveryZone[]>({ queryKey: ["delivery-zones"], queryFn: () => api("/api/store/delivery-zones") });
-  const { data: cartData, isLoading: cartLoading } = useQuery<{ items: Array<{ currentPrice: string; quantity: number; part: { name: string; isOversized?: boolean } }>; itemCount: number }>({
+  const { data: cartData, isLoading: cartLoading } = useQuery<{ items: Array<{ currentPrice: string; quantity: number; product: { name: string; isOversized?: boolean } }>; itemCount: number }>({
     queryKey: ["server-cart"],
     queryFn: () => api("/api/store/cart"),
     enabled: isAuthenticated,
@@ -55,10 +61,10 @@ export default function CheckoutPage() {
   const items = cartData?.items || [];
   const subtotal = items.reduce((s, i) => s + parseFloat(i.currentPrice) * i.quantity, 0);
   const selectedZone = zones.find(z => z.id === selectedZoneId);
-  const hasOversized = items.some(i => i.part?.isOversized);
+  const hasOversized = items.some(i => i.product?.isOversized);
   const deliveryFee = deliveryMethod === "pickup" ? 0 : selectedZone
     ? parseFloat(selectedZone.deliveryFee) + (hasOversized ? parseFloat(selectedZone.oversizedSurcharge) : 0) : 0;
-  const estimatedTax = (subtotal + deliveryFee) * TAX_RATE;
+  const estimatedTax = (subtotal + deliveryFee) * taxRate;
   const estimatedTotal = subtotal + deliveryFee + estimatedTax;
 
   // Listen for 3DS postMessage callback
@@ -66,7 +72,7 @@ export default function CheckoutPage() {
     if (event.data?.type === "powertranz-callback") {
       const { orderId, success } = event.data;
       if (success && orderId) {
-        router.push(`/orders/${orderId}`);
+        router.push(`/checkout/success?orderId=${orderId}`);
       } else {
         setError("Payment was not completed. Please try again.");
         setIsSubmitting(false);
@@ -137,7 +143,7 @@ export default function CheckoutPage() {
         setIsSubmitting(false);
       } else {
         // Direct approval (no 3DS needed)
-        router.push(`/orders/${result.orderId}`);
+        router.push(`/checkout/success?orderId=${result.orderId}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout failed");
@@ -386,7 +392,7 @@ export default function CheckoutPage() {
         <div className="space-y-2 text-sm border-b pb-3">
           {items.map((item, i) => (
             <div key={i} className="flex justify-between gap-2">
-              <span className="text-muted-foreground truncate">{item.part?.name || `Item ${i + 1}`} &times; {item.quantity}</span>
+              <span className="text-muted-foreground truncate">{item.product?.name || `Item ${i + 1}`} &times; {item.quantity}</span>
               <span className="font-medium shrink-0">{formatPrice(parseFloat(item.currentPrice) * item.quantity)}</span>
             </div>
           ))}
@@ -402,7 +408,7 @@ export default function CheckoutPage() {
             <span className="font-medium">{deliveryFee > 0 ? formatPrice(deliveryFee) : deliveryMethod === "pickup" ? "Free" : "Select zone"}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Tax (GCT 15%)</span>
+            <span className="text-muted-foreground">Tax ({taxName} {(taxRate * 100).toFixed(0)}%)</span>
             <span className="font-medium">{formatPrice(estimatedTax)}</span>
           </div>
         </div>

@@ -42,7 +42,7 @@ function NewReturnContent() {
         id: string;
         orderNumber: string;
         status: string;
-        items: Array<{ id: string; partName: string; partNumber: string; quantity: number; unitPrice: string; lineTotal: string }>;
+        items: Array<{ id: string; productName: string; productNumber: string; quantity: number; unitPrice: string; lineTotal: string }>;
       }>(`/api/store/orders/${orderId}`),
     enabled: isAuthenticated && !!orderId,
   });
@@ -153,8 +153,8 @@ function NewReturnContent() {
               return (
                 <div key={item.id} className={`p-4 flex items-center justify-between gap-4 transition-colors ${qty > 0 ? "bg-primary/5" : ""}`}>
                   <div className="min-w-0">
-                    <p className="font-medium text-sm line-clamp-1">{item.partName}</p>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.partNumber}</p>
+                    <p className="font-medium text-sm line-clamp-1">{item.productName}</p>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.productNumber}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{formatPrice(item.unitPrice)} x {item.quantity}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">

@@ -160,4 +160,31 @@ router.get("/api/store/settings/public", async (_req, res) => {
   }
 });
 
+// Newsletter subscription (public)
+router.post("/api/store/newsletter/subscribe", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== "string" || !email.includes("@")) {
+      return res.status(400).json({ message: "Valid email is required" });
+    }
+    const { newsletterSubscribers } = await import("../schema.js");
+    const { db } = await import("../db.js");
+    const { randomUUID } = await import("crypto");
+    // Upsert: ignore duplicate
+    try {
+      await db.insert(newsletterSubscribers).values({ id: randomUUID(), email: email.trim().toLowerCase() });
+    } catch (err: unknown) {
+      // Duplicate email — treat as success
+      if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "ER_DUP_ENTRY") {
+        return res.json({ message: "Subscribed successfully" });
+      }
+      throw err;
+    }
+    res.json({ message: "Subscribed successfully" });
+  } catch (error) {
+    console.error("Newsletter subscribe failed", error);
+    res.status(500).json({ message: "Failed to subscribe" });
+  }
+});
+
 export default router;

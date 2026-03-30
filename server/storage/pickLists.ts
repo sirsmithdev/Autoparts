@@ -350,10 +350,48 @@ export async function completePickList(id: string): Promise<void> {
     );
   }
 
-  await db
-    .update(pickLists)
-    .set({ status: "completed", completedAt: new Date() })
-    .where(eq(pickLists.id, id));
+  // W9: For short or skipped items, restore the unpicked reserved stock back to bins.
+  // Since stock was reserved at order placement (W8), pick completion should NOT
+  // double-deduct. Instead, we restore the difference for items that were short-picked.
+  const allItems = await db
+    .select()
+    .from(pickListItems)
+    .where(eq(pickListItems.pickListId, id));
+
+  await db.transaction(async (tx) => {
+    for (const item of allItems) {
+      const shortfall = item.quantityRequired - item.quantityPicked;
+      if (shortfall > 0) {
+        // Restore unpicked quantity back to bin assignment
+        await tx.execute(
+          sql`UPDATE product_bin_assignments SET quantity = quantity + ${shortfall}, updated_at = NOW() WHERE product_id = ${item.productId} AND bin_id = ${item.binId}`,
+        );
+
+        // Restore to products.quantity
+        await tx.execute(
+          sql`UPDATE products SET quantity = quantity + ${shortfall} WHERE id = ${item.productId}`,
+        );
+
+        // Write unreserved movement
+        await tx.insert(stockMovements).values({
+          id: randomUUID(),
+          productId: item.productId,
+          binId: item.binId,
+          movementType: "unreserved",
+          quantity: shortfall,
+          referenceType: "pick_list",
+          referenceId: id,
+          notes: `Short pick: required ${item.quantityRequired}, picked ${item.quantityPicked}`,
+          performedBy: "system",
+        });
+      }
+    }
+
+    await tx
+      .update(pickLists)
+      .set({ status: "completed", completedAt: new Date() })
+      .where(eq(pickLists.id, id));
+  });
 
   // Auto-advance order to packed
   if (pickList.sourceType === "online_order") {

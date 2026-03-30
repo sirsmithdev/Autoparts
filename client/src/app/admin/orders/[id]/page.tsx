@@ -16,8 +16,8 @@ import { formatPrice } from "@/lib/utils";
 
 interface OrderItem {
   id: string;
-  partName: string;
-  partNumber: string;
+  productName: string;
+  productNumber: string;
   quantity: number;
   unitPrice: string;
   lineTotal: string;
@@ -234,8 +234,8 @@ export default function AdminOrderDetailPage() {
             {order.items?.map((item) => (
               <div key={item.id} className="flex items-center justify-between p-4 gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium line-clamp-1">{item.partName}</p>
-                  <p className="text-xs text-muted-foreground font-mono">{item.partNumber}</p>
+                  <p className="text-sm font-medium line-clamp-1">{item.productName}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{item.productNumber}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-medium">{formatPrice(item.lineTotal)}</p>

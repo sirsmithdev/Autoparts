@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import {
   ShoppingCart, User, LogOut, Search, Store,
   Package, RotateCcw, ChevronDown, Menu, X, Settings,
-  Grid3X3, Tag, Flame,
+  Grid3X3, Tag, Flame, Heart,
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -144,6 +144,9 @@ export function StoreHeader() {
                     <DropdownMenuItem onClick={() => router.push("/orders")}>
                       <Package className="h-4 w-4 mr-2" /> Orders
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/wishlist")}>
+                      <Heart className="h-4 w-4 mr-2" /> Wishlist
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/returns")}>
                       <RotateCcw className="h-4 w-4 mr-2" /> Returns
                     </DropdownMenuItem>
@@ -163,7 +166,13 @@ export function StoreHeader() {
                 </Link>
               )}
 
-              {/* Wishlist — hidden until frontend page is built */}
+              {/* Wishlist */}
+              {isAuthenticated && (
+                <Link href="/wishlist" className="relative flex flex-col items-center gap-0.5 p-2 text-[rgb(49,67,80)] hover:text-foreground transition-colors rounded-md hover:bg-slate-100">
+                  <Heart className="h-5 w-5" />
+                  <span className="text-[11px] font-medium hidden lg:block">Wishlist</span>
+                </Link>
+              )}
 
               {/* Cart */}
               <Link href="/cart" className="relative flex flex-col items-center gap-0.5 p-2 text-[rgb(49,67,80)] hover:text-foreground transition-colors rounded-md hover:bg-slate-100">
@@ -227,6 +236,9 @@ export function StoreHeader() {
             </Link>
             <Link href="/search?category=Engine" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
               Engine
+            </Link>
+            <Link href="/diagrams" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
+              Parts Diagrams
             </Link>
             <Link href="/contact" className="shrink-0 px-3 py-2.5 text-[15px] text-black font-semibold hover:text-primary rounded-sm transition-colors">
               Contact

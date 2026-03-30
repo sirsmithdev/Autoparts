@@ -9,6 +9,9 @@ import * as returns from "../storage/returns.js";
 import * as settings from "../storage/settings.js";
 import * as syncStorage from "../storage/sync.js";
 import * as staffActivity from "../storage/staffActivity.js";
+import { db } from "../db.js";
+import { onlineStoreOrders, onlineStoreReturns } from "../schema.js";
+import { sql, count } from "drizzle-orm";
 
 const router = Router();
 
@@ -373,6 +376,41 @@ router.post("/api/store/admin/settings/sync-resolve/:id", authenticateToken, req
     res.json({ message: "Event resolved" });
   } catch (error) {
     res.status(500).json({ message: "Failed to resolve sync event" });
+  }
+});
+
+// ==================== Dashboard Stats ====================
+
+router.get("/api/store/admin/stats", authenticateToken, requirePermission("orders:read"), async (_req, res) => {
+  try {
+    // Total orders and revenue (excluding cancelled)
+    const [orderStats] = await db
+      .select({
+        totalOrders: count(),
+        totalRevenue: sql<string>`COALESCE(SUM(${onlineStoreOrders.total}), 0)`,
+      })
+      .from(onlineStoreOrders)
+      .where(sql`${onlineStoreOrders.status} != 'cancelled'`);
+
+    const totalOrders = Number(orderStats?.totalOrders ?? 0);
+    const totalRevenue = String(orderStats?.totalRevenue ?? "0.00");
+    const avgOrderValue = totalOrders > 0
+      ? (parseFloat(totalRevenue) / totalOrders).toFixed(2)
+      : "0.00";
+
+    // Return count
+    const [returnStats] = await db
+      .select({ totalReturns: count() })
+      .from(onlineStoreReturns);
+
+    const totalReturns = Number(returnStats?.totalReturns ?? 0);
+    const returnRate = totalOrders > 0
+      ? parseFloat(((totalReturns / totalOrders) * 100).toFixed(2))
+      : 0;
+
+    res.json({ totalOrders, totalRevenue, avgOrderValue, returnRate });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to get stats" });
   }
 });
 

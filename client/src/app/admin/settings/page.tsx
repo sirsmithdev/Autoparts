@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import {
-  Settings, MapPin, Plus, Pencil, Trash2, Loader2,
+  MapPin, Plus, Pencil, Trash2, Loader2,
   AlertTriangle, Package, ShieldCheck,
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -14,12 +14,11 @@ import { useToast } from "@/hooks/use-toast";
 /* ---------- Types ---------- */
 
 interface StoreSettings {
-  storeEnabled: boolean;
-  storeName: string;
-  storeAnnouncement: string;
-  minOrderAmount: number;
-  estimatedDeliveryDays: number;
-  pickupAddress: string;
+  id: number;
+  taxRate: string;
+  taxName: string;
+  currency: string;
+  currencySymbol: string;
   returnWindowDays: number;
   defectiveReturnWindowDays: number;
   restockingFeePercent: string;
@@ -27,32 +26,32 @@ interface StoreSettings {
   maxQuantityPerItem: number;
   maxItemsPerOrder: number;
   cartExpirationDays: number;
-  currency: string;
+  updatedAt: string;
 }
 
 interface DeliveryZone {
   id: string;
   name: string;
   parishes: string[];
-  flatFee: string;
-  freeDeliveryThreshold: string | null;
-  active: boolean;
+  deliveryFee: string;
+  oversizedSurcharge: string;
+  estimatedDays: number;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 interface DeliveryZoneForm {
   name: string;
   parishes: string;
-  flatFee: string;
-  freeDeliveryThreshold: string;
-  active: boolean;
+  deliveryFee: string;
+  isActive: boolean;
 }
 
 const emptyZoneForm: DeliveryZoneForm = {
   name: "",
   parishes: "",
-  flatFee: "0",
-  freeDeliveryThreshold: "",
-  active: true,
+  deliveryFee: "0",
+  isActive: true,
 };
 
 /* ---------- Component ---------- */
@@ -68,51 +67,14 @@ export default function AdminSettingsPage() {
     queryFn: () => api<StoreSettings>("/api/store/admin/settings"),
   });
 
-  const [storeEnabled, setStoreEnabled] = useState(false);
-  const [storeName, setStoreName] = useState("");
-  const [storeAnnouncement, setStoreAnnouncement] = useState("");
-  const [minOrderAmount, setMinOrderAmount] = useState(0);
-  const [estimatedDeliveryDays, setEstimatedDeliveryDays] = useState(3);
-  const [pickupAddress, setPickupAddress] = useState("");
-
-  useEffect(() => {
-    if (settings) {
-      setStoreEnabled(settings.storeEnabled ?? false);
-      setStoreName(settings.storeName ?? "");
-      setStoreAnnouncement(settings.storeAnnouncement ?? "");
-      setMinOrderAmount(settings.minOrderAmount ?? 0);
-      setEstimatedDeliveryDays(settings.estimatedDeliveryDays ?? 3);
-      setPickupAddress(settings.pickupAddress ?? "");
-    }
-  }, [settings]);
-
   const { register, handleSubmit } = useForm<Partial<StoreSettings>>({
     values: settings || undefined,
-  });
-
-  const generalMutation = useMutation({
-    mutationFn: () =>
-      api("/api/store/admin/settings", {
-        method: "PUT",
-        body: JSON.stringify({
-          storeEnabled,
-          storeName,
-          storeAnnouncement,
-          minOrderAmount,
-          estimatedDeliveryDays,
-          pickupAddress,
-        }),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-store-settings"] });
-      toast({ title: "Settings saved successfully" });
-    },
   });
 
   const policyMutation = useMutation({
     mutationFn: (data: Partial<StoreSettings>) =>
       api("/api/store/admin/settings", {
-        method: "PUT",
+        method: "PATCH",
         body: JSON.stringify(data),
       }),
     onSuccess: () => {
@@ -125,7 +87,7 @@ export default function AdminSettingsPage() {
 
   const { data: zones, isLoading: zonesLoading } = useQuery<DeliveryZone[]>({
     queryKey: ["admin-delivery-zones"],
-    queryFn: () => api<DeliveryZone[]>("/api/store/delivery-zones"),
+    queryFn: () => api<DeliveryZone[]>("/api/store/admin/delivery-zones"),
   });
 
   const [zoneDialog, setZoneDialog] = useState(false);
@@ -153,9 +115,8 @@ export default function AdminSettingsPage() {
     setZoneForm({
       name: zone.name,
       parishes: zone.parishes.join(", "),
-      flatFee: zone.flatFee,
-      freeDeliveryThreshold: zone.freeDeliveryThreshold || "",
-      active: zone.active,
+      deliveryFee: zone.deliveryFee,
+      isActive: zone.isActive,
     });
     setZoneDialog(true);
   };
@@ -165,13 +126,12 @@ export default function AdminSettingsPage() {
       const body = {
         name: data.form.name,
         parishes: data.form.parishes.split(",").map((p) => p.trim()).filter(Boolean),
-        flatFee: data.form.flatFee,
-        freeDeliveryThreshold: data.form.freeDeliveryThreshold || null,
-        active: data.form.active,
+        deliveryFee: data.form.deliveryFee,
+        isActive: data.form.isActive,
       };
       if (data.id) {
         return api(`/api/store/admin/delivery-zones/${data.id}`, {
-          method: "PUT",
+          method: "PATCH",
           body: JSON.stringify(body),
         });
       }
@@ -196,10 +156,10 @@ export default function AdminSettingsPage() {
   });
 
   const zoneToggleMutation = useMutation({
-    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       api(`/api/store/admin/delivery-zones/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({ active }),
+        method: "PATCH",
+        body: JSON.stringify({ isActive }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-delivery-zones"] });
@@ -219,115 +179,6 @@ export default function AdminSettingsPage() {
       <div>
         <h1 className="text-2xl font-bold">Store Settings</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Configure your online parts store</p>
-      </div>
-
-      {/* ---- General Store Settings ---- */}
-      <div className="border rounded-md bg-card">
-        <div className="p-5 border-b">
-          <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <h2 className="font-semibold">General Settings</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Store status, name, and display options</p>
-            </div>
-          </div>
-        </div>
-        <div className="p-5 space-y-6 max-w-2xl">
-          {/* Store Enabled */}
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="text-sm font-medium block">Store Enabled</label>
-              <p className="text-xs text-muted-foreground mt-0.5">When disabled, the storefront shows a maintenance page</p>
-            </div>
-            <button
-              role="switch"
-              aria-checked={storeEnabled}
-              onClick={() => setStoreEnabled(!storeEnabled)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                storeEnabled ? "bg-primary" : "bg-gray-300"
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                storeEnabled ? "translate-x-6" : "translate-x-1"
-              }`} />
-            </button>
-          </div>
-
-          {/* Store Name */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium block">Store Name</label>
-            <input
-              value={storeName}
-              onChange={(e) => setStoreName(e.target.value)}
-              placeholder="e.g. 316 Auto Parts"
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          {/* Store Announcement */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium block">Store Announcement</label>
-            <textarea
-              value={storeAnnouncement}
-              onChange={(e) => setStoreAnnouncement(e.target.value)}
-              placeholder="Optional banner message shown on the storefront..."
-              rows={3}
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-            />
-            <p className="text-xs text-muted-foreground">Leave empty to hide the banner</p>
-          </div>
-
-          {/* Min Order Amount */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium block">Minimum Order Amount ($)</label>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={minOrderAmount}
-              onChange={(e) => setMinOrderAmount(parseFloat(e.target.value) || 0)}
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <p className="text-xs text-muted-foreground">Set to 0 for no minimum</p>
-          </div>
-
-          {/* Estimated Delivery Days */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium block">Estimated Delivery Days</label>
-            <input
-              type="number"
-              min={1}
-              value={estimatedDeliveryDays}
-              onChange={(e) => setEstimatedDeliveryDays(parseInt(e.target.value) || 1)}
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <p className="text-xs text-muted-foreground">Shown to customers during checkout</p>
-          </div>
-
-          {/* Pickup Address */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium block">Pickup Address</label>
-            <textarea
-              value={pickupAddress}
-              onChange={(e) => setPickupAddress(e.target.value)}
-              placeholder="Address shown to customers for in-store pickup..."
-              rows={2}
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-            />
-          </div>
-
-          {/* Save Button */}
-          <div className="pt-2">
-            <button
-              onClick={() => generalMutation.mutate()}
-              disabled={generalMutation.isPending}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
-            >
-              {generalMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Save General Settings
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* ---- Return Policy & Order Limits ---- */}
@@ -478,15 +329,14 @@ export default function AdminSettingsPage() {
                 <tr className="border-b bg-muted/40">
                   <th className="text-left p-3 font-medium text-muted-foreground">Zone Name</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Parishes</th>
-                  <th className="text-right p-3 font-medium text-muted-foreground">Flat Fee</th>
-                  <th className="text-right p-3 font-medium text-muted-foreground">Free Threshold</th>
+                  <th className="text-right p-3 font-medium text-muted-foreground">Delivery Fee</th>
                   <th className="text-center p-3 font-medium text-muted-foreground">Active</th>
                   <th className="w-20 p-3"></th>
                 </tr>
               </thead>
               <tbody>
                 {(!zones || zones.length === 0) ? (
-                  <tr><td colSpan={6} className="text-center py-12 text-muted-foreground">No delivery zones configured</td></tr>
+                  <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">No delivery zones configured</td></tr>
                 ) : zones.map((zone) => (
                   <tr key={zone.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 font-medium">{zone.name}</td>
@@ -497,21 +347,18 @@ export default function AdminSettingsPage() {
                         ))}
                       </div>
                     </td>
-                    <td className="p-3 text-right font-medium">{formatPrice(zone.flatFee)}</td>
-                    <td className="p-3 text-right text-muted-foreground">
-                      {zone.freeDeliveryThreshold ? formatPrice(zone.freeDeliveryThreshold) : "\u2014"}
-                    </td>
+                    <td className="p-3 text-right font-medium">{formatPrice(zone.deliveryFee)}</td>
                     <td className="p-3 text-center">
                       <button
                         role="switch"
-                        aria-checked={zone.active}
-                        onClick={() => zoneToggleMutation.mutate({ id: zone.id, active: !zone.active })}
+                        aria-checked={zone.isActive}
+                        onClick={() => zoneToggleMutation.mutate({ id: zone.id, isActive: !zone.isActive })}
                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                          zone.active ? "bg-primary" : "bg-gray-300"
+                          zone.isActive ? "bg-primary" : "bg-gray-300"
                         }`}
                       >
                         <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                          zone.active ? "translate-x-[1.125rem]" : "translate-x-[0.125rem]"
+                          zone.isActive ? "translate-x-[1.125rem]" : "translate-x-[0.125rem]"
                         }`} />
                       </button>
                     </td>
@@ -569,43 +416,29 @@ export default function AdminSettingsPage() {
                 />
                 <p className="text-xs text-muted-foreground">Comma-separated list of parishes</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium block">Flat Fee ($)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={zoneForm.flatFee}
-                    onChange={(e) => setZoneForm((f) => ({ ...f, flatFee: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium block">Free Threshold ($)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={zoneForm.freeDeliveryThreshold}
-                    onChange={(e) => setZoneForm((f) => ({ ...f, freeDeliveryThreshold: e.target.value }))}
-                    placeholder="Optional"
-                    className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium block">Delivery Fee ($)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={zoneForm.deliveryFee}
+                  onChange={(e) => setZoneForm((f) => ({ ...f, deliveryFee: e.target.value }))}
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </div>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   role="switch"
-                  aria-checked={zoneForm.active}
-                  onClick={() => setZoneForm((f) => ({ ...f, active: !f.active }))}
+                  aria-checked={zoneForm.isActive}
+                  onClick={() => setZoneForm((f) => ({ ...f, isActive: !f.isActive }))}
                   className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                    zoneForm.active ? "bg-primary" : "bg-gray-300"
+                    zoneForm.isActive ? "bg-primary" : "bg-gray-300"
                   }`}
                 >
                   <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                    zoneForm.active ? "translate-x-[1.125rem]" : "translate-x-[0.125rem]"
+                    zoneForm.isActive ? "translate-x-[1.125rem]" : "translate-x-[0.125rem]"
                   }`} />
                 </button>
                 <label className="text-sm font-medium">Active</label>

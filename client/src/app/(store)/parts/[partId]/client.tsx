@@ -6,12 +6,12 @@ import { useAuth } from "@/hooks/useAuth";
 import DOMPurify from "dompurify";
 import { useGuestCart } from "@/hooks/useCart";
 import { useVehicleSelection, hasVehicleSelected } from "@/hooks/useVehicleSelection";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import {
   ShoppingCart, Package, RefreshCw, CheckCircle2, Loader2,
   Minus, Plus, Car, Info, ChevronDown, ChevronUp, AlertCircle,
-  Truck, RotateCcw, Headphones,
+  Truck, RotateCcw, Headphones, Heart,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -52,6 +52,29 @@ export function PartDetailClient({ detail }: { detail: PartDetail }) {
     vehicle.year !== null && vehicle.year >= vc.yearStart && vehicle.year <= vc.yearEnd
   );
 
+  // Wishlist
+  const { data: wishlistItems = [] } = useQuery<Array<{ productId: string }>>({
+    queryKey: ["wishlist"],
+    queryFn: () => api("/api/store/wishlist"),
+    enabled: isAuthenticated,
+  });
+  const isInWishlist = wishlistItems.some(w => w.productId === part.id);
+
+  const addToWishlistMutation = useMutation({
+    mutationFn: () => api("/api/store/wishlist", { method: "POST", body: JSON.stringify({ productId: part.id }) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+  });
+  const removeFromWishlistMutation = useMutation({
+    mutationFn: () => api(`/api/store/wishlist/${part.id}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+  });
+
+  const toggleWishlist = () => {
+    if (!isAuthenticated) return;
+    if (isInWishlist) removeFromWishlistMutation.mutate();
+    else addToWishlistMutation.mutate();
+  };
+
   const [addingToCart, setAddingToCart] = useState(false);
   const [addError, setAddError] = useState("");
 
@@ -61,7 +84,7 @@ export function PartDetailClient({ detail }: { detail: PartDetail }) {
     try {
       setAddingToCart(true);
       if (isAuthenticated) {
-        await api("/api/store/cart/items", { method: "POST", body: JSON.stringify({ partId: part.id, quantity }) });
+        await api("/api/store/cart/items", { method: "POST", body: JSON.stringify({ productId: part.id, quantity }) });
         queryClient.invalidateQueries({ queryKey: ["server-cart"] });
       } else {
         addGuestItem({ partId: part.id, quantity, name: part.name, partNumber: part.partNumber, salePrice: part.salePrice, imageUrl: part.imageUrl });
@@ -167,7 +190,7 @@ export function PartDetailClient({ detail }: { detail: PartDetail }) {
             )}
           </div>
 
-          {/* Price + Stock */}
+          {/* Price + Stock + Wishlist */}
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-3xl font-bold">{formatPrice(part.salePrice)}</span>
             <StockBadge status={part.stockStatus} />
@@ -175,6 +198,16 @@ export function PartDetailClient({ detail }: { detail: PartDetail }) {
               <span className="text-xs font-medium border px-2.5 py-1 rounded-full capitalize bg-amber-50 text-amber-700 border-amber-200">
                 {part.condition}
               </span>
+            )}
+            {isAuthenticated && (
+              <button
+                onClick={toggleWishlist}
+                disabled={addToWishlistMutation.isPending || removeFromWishlistMutation.isPending}
+                className="ml-auto p-2 rounded-full border hover:bg-accent transition-colors disabled:opacity-50"
+                title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+              >
+                <Heart className={`h-5 w-5 ${isInWishlist ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+              </button>
             )}
           </div>
 
